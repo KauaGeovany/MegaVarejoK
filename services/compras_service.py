@@ -233,7 +233,9 @@ class ComprasService:
                 cursor.execute("UPDATE compras SET status=%s, valor_recebido=valor_recebido+%s, data_recebimento=NOW() WHERE id=%s",
                                (status, valor_recebido, compra_id))
                 # Cada recebimento gera obrigação financeira pelo valor efetivamente recebido.
-                vencimento = dados.get("data_vencimento") or (datetime.date.today() + datetime.timedelta(days=30)).isoformat()
+                condicao = str(compra.get("condicao_pagamento") or "").strip().lower()
+                vencimento_padrao = datetime.date.today() if "vista" in condicao else datetime.date.today() + datetime.timedelta(days=30)
+                vencimento = dados.get("data_vencimento") or vencimento_padrao.isoformat()
                 if vencimento:
                     cursor.execute("""
                         INSERT INTO contas_pagar (descricao,fornecedor_id,categoria,valor_original,valor_pago,data_vencimento,status,responsavel,observacoes)
