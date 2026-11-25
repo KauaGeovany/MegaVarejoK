@@ -6,7 +6,7 @@ class Produto:
     """
 
     def __init__(self, nome: str, preco: float, estoque: int, codigo: str = None,
-                 categoria: str = "Geral", estoque_minimo: int = 5, estoque_reservado: int = 0, id: int = None):
+                 categoria: str = "Geral", estoque_minimo: int = 5, estoque_reservado: int = 0, id: int = None, custo_medio: float = 0):
         self._id = id
         self.codigo = codigo or (f"PRD-{id:03d}" if id else "")
         self.nome = nome
@@ -15,6 +15,7 @@ class Produto:
         self.estoque = estoque
         self.estoque_reservado = estoque_reservado
         self.estoque_minimo = estoque_minimo
+        self.custo_medio = custo_medio
 
     @property
     def id(self):
@@ -109,6 +110,20 @@ class Produto:
         except (TypeError, ValueError):
             raise ValueError("Estoque mínimo inválido.")
 
+    @property
+    def custo_medio(self):
+        return self._custo_medio
+
+    @custo_medio.setter
+    def custo_medio(self, valor):
+        try:
+            custo = float(valor or 0)
+            if custo < 0:
+                raise ValueError("O custo médio não pode ser negativo.")
+            self._custo_medio = round(custo, 4)
+        except (TypeError, ValueError):
+            raise ValueError("Custo médio inválido.")
+
     def possui_estoque(self, quantidade: int) -> bool:
         """Verifica se há estoque disponível (livre de reservas) para atender à quantidade."""
         return self.estoque_disponivel >= quantidade
@@ -178,5 +193,6 @@ class Produto:
             "estoque_reservado": int(self._estoque_reservado),
             "estoque_disponivel": int(self.estoque_disponivel),
             "estoque_minimo": int(self._estoque_minimo),
+            "custo_medio": float(self._custo_medio),
             "status_estoque": self.status_estoque()
         }
