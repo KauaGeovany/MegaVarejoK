@@ -2742,7 +2742,7 @@ async function selecionarCompraRecebimento(id) {
     if (!res.ok) return mostrarAlerta(compra.erro || 'Erro ao carregar ordem.','erro');
     compraSelecionadaRecebimento = compra;
     const pendentes = compra.itens.filter(i=>Number(i.quantidade)>Number(i.quantidade_recebida));
-    document.getElementById('recebimento-itens').innerHTML = pendentes.length ? pendentes.map(i => '<div class="recebimento-item"><label>'+i.produto_nome+' — pendente: '+(i.quantidade-i.quantidade_recebida)+' un.</label><input type="number" min="0" max="'+(i.quantidade-i.quantidade_recebida)+'" value="'+(i.quantidade-i.quantidade_recebida)+'" data-item-compra="'+i.id+'" aria-label="Quantidade recebida"></div>').join('') : '<span>Todos os itens já foram recebidos.</span>';
+    document.getElementById('recebimento-itens').innerHTML = pendentes.length ? pendentes.map(i => '<div class="recebimento-item"><label>'+i.produto_nome+' — pendente: '+(i.quantidade-i.quantidade_recebida)+' un.</label><input type="number" min="0" max="'+(i.quantidade-i.quantidade_recebida)+'" value="'+(i.quantidade-i.quantidade_recebida)+'" data-item-compra="'+i.id+'" aria-label="Quantidade recebida"><input type="text" data-lote-item="'+i.id+'" placeholder="Lote (opcional)" aria-label="Lote"><input type="date" data-validade-item="'+i.id+'" aria-label="Validade"></div>').join('') : '<span>Todos os itens já foram recebidos.</span>';
 }
 async function registrarRecebimentoCompra() {
     const compraId = Number(document.getElementById('recebimento-compra').value);
@@ -2751,8 +2751,8 @@ async function registrarRecebimentoCompra() {
     const itens = Array.from(document.querySelectorAll('[data-item-compra]')).map(el=>({
         item_id:Number(el.dataset.itemCompra),
         quantidade_recebida:Number(el.value),
-        data_validade:document.getElementById('recebimento-validade').value || null,
-        lote:document.getElementById('recebimento-lote').value || null
+        data_validade:document.querySelector('[data-validade-item="'+el.dataset.itemCompra+'"]')?.value || null,
+        lote:document.querySelector('[data-lote-item="'+el.dataset.itemCompra+'"]')?.value || null
     })).filter(i=>i.quantidade_recebida>0);
     if (!itens.length) return mostrarAlerta('Informe ao menos uma quantidade recebida.','erro');
     const payload={itens,data_vencimento:document.getElementById('recebimento-vencimento').value || null};
