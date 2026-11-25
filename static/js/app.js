@@ -2667,6 +2667,8 @@ async function carregarFornecedoresCompra() {
     const fornecedores = await res.json();
     const select = document.getElementById('compra-fornecedor');
     if (select) select.innerHTML = '<option value="">Selecione um fornecedor</option>' + fornecedores.map(f => '<option value="' + f.id + '">' + f.razao_social + '</option>').join('');
+    const tbody = document.getElementById('tabela-fornecedores-compras');
+    if (tbody) tbody.innerHTML = fornecedores.length ? fornecedores.map(f => '<tr><td><strong>'+f.razao_social+'</strong></td><td>'+f.cnpj_cpf+'</td><td>'+f.email+'<br><small>'+f.telefone+'</small></td><td>'+f.categoria+'</td></tr>').join('') : '<tr><td colspan="4">Nenhum fornecedor cadastrado.</td></tr>';
 }
 async function salvarFornecedorCompra(event) {
     event.preventDefault();
