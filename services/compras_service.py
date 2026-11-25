@@ -233,7 +233,7 @@ class ComprasService:
                     produto = cursor.fetchone()
                     saldo = int(produto["estoque"])
                     custo_medio = Decimal(str(produto["custo_medio"] or 0))
-                    novo_custo = ((Decimal(saldo) * custo_medio) + (Decimal(qtd) * custo)) / Decimal(saldo + qtd) if saldo + qtd else custo
+                    novo_custo = (((Decimal(saldo) * custo_medio) + (Decimal(qtd) * custo)) / Decimal(saldo + qtd)) if saldo > 0 and custo_medio > 0 else custo
                     novo_saldo = saldo + qtd
                     cursor.execute("UPDATE produtos SET estoque=%s, custo_medio=%s WHERE id=%s", (novo_saldo, novo_custo, produto_id))
                     cursor.execute("""
