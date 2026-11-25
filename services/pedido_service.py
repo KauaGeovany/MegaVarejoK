@@ -213,7 +213,7 @@ class PedidoService:
                     raise PermissionError("Operadores de estoque só podem alterar status de separação e expedição.")
 
             # Se a transição for para 'Enviado' (ou 'Pronto para Envio'), consolida a saída física
-            if novo_status in ['Enviado', 'Pronto para Envio'] and status_anterior not in ['Pronto para Envio', 'Enviado', 'Em Transporte', 'Entregue']:
+            if novo_status in ['Enviado', 'Pronto para Envio', 'Entregue'] and status_anterior not in ['Pronto para Envio', 'Enviado', 'Em Transporte', 'Entregue']:
                 for item in pedido.itens:
                     prod = self._produto_repo.buscar_por_id_com_lock(item.produto_id, conn)
                     if prod:
