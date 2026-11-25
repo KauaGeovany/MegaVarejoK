@@ -513,6 +513,9 @@ def criar_pedido():
     cliente_id = dados.get('cliente_id')
     desconto = dados.get('desconto', 0.0)
     frete = dados.get('frete', 0.0)
+    transportadora_id = dados.get('transportadora_id')
+    peso_kg = dados.get('peso_kg', 0)
+    cotacao = None
     forma_pagamento = dados.get('forma_pagamento', 'PIX')
     endereco_entrega = dados.get('endereco_entrega')
     data_prevista_entrega = dados.get('data_prevista_entrega')
@@ -520,6 +523,21 @@ def criar_pedido():
     responsavel = session.get('usuario_nome') or 'Vendedor'
 
     try:
+        if transportadora_id:
+            subtotal_estimado = sum(
+                float((item.get('quantidade') or 0)) * float((item.get('preco_unitario') or 0))
+                for item in itens
+            )
+            if subtotal_estimado <= 0:
+                # O serviço de pedidos usa os preços atuais do cadastro; o subtotal é recalculado abaixo
+                subtotal_estimado = 0
+            # Cotação confiável é recalculada com o subtotal dos produtos no banco dentro do serviço de pedidos.
+            # Para esta demonstração, os preços enviados pelo navegador não são aceitos como fonte de verdade.
+            cotacao = logistica_service.calcular_frete(transportadora_id, subtotal_estimado, peso_kg)
+            frete = cotacao['frete']
+            if not data_prevista_entrega:
+                data_prevista_entrega = cotacao['data_prevista']
+
         resultado = pedido_service.criar_pedido(
             itens=itens,
             cliente_id=cliente_id,
@@ -531,6 +549,13 @@ def criar_pedido():
             data_prevista_entrega=data_prevista_entrega,
             observacoes=observacoes
         )
+        if transportadora_id:
+            logistica_service.registrar_entrega(resultado['pedido_id'], {
+                'transportadora_id': transportadora_id,
+                'peso_kg': peso_kg,
+                'valor_frete': frete,
+                'data_prevista': data_prevista_entrega
+            }, responsavel)
         return jsonify(resultado), 201
     except KeyError as ke:
         return jsonify({"erro": str(ke).strip("'")}), 404
