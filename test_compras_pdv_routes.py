@@ -73,3 +73,5 @@ class TestRotasComprasEPDV(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+# Suite de testes de integração HTTP com dependências isoladas por mocks.
