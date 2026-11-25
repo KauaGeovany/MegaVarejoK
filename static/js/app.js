@@ -1802,7 +1802,7 @@ async function carregarClientes(busca = '') {
                 acaoBotoes += ` <button class="btn btn-primary btn-sm" onclick="iniciarEdicaoCliente(${cli.id})" title="Editar dados"> Editar</button>`;
             }
             if (podeExcluir) {
-                acaoBotoes += ` <button class="btn btn-danger btn-sm" onclick="excluirCliente(${cli.id}, '${cli.nome}', ${totalPed})" title="Excluir cliente"></button>`;
+                acaoBotoes += ` <button type="button" class="btn btn-danger btn-sm btn-excluir-cliente" onclick="excluirCliente(${cli.id}, '${cli.nome}', ${totalPed})" title="Excluir cliente" aria-label="Excluir cliente"><svg class="inline-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Excluir</span></button>`;
             }
 
             tr.innerHTML = `
