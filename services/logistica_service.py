@@ -195,6 +195,9 @@ class LogisticaService:
                          data_prevista, observacoes, responsavel)
                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
                         (pedido_id,) + valores)
+            with conn.cursor() as cursor:
+                if dados.get("data_prevista"):
+                    cursor.execute("UPDATE pedidos SET data_prevista_entrega=%s WHERE id=%s", (dados.get("data_prevista"), pedido_id))
             conn.commit()
             return {"mensagem": "Dados logísticos salvos com sucesso."}
         except Exception:
