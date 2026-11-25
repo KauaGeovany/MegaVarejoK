@@ -74,7 +74,15 @@ class LogisticaService:
                     sql += " WHERE ativo = 1"
                 sql += " ORDER BY nome"
                 cursor.execute(sql)
-                return [dict(r) for r in cursor.fetchall()]
+                resultado = []
+                for row in cursor.fetchall():
+                    item = dict(row)
+                    for campo in ("taxa_fixa", "valor_por_kg", "percentual", "frete_minimo"):
+                        item[campo] = float(item.get(campo) or 0)
+                    item["prazo_dias"] = int(item.get("prazo_dias") or 0)
+                    item["ativo"] = int(item.get("ativo") or 0)
+                    resultado.append(item)
+                return resultado
         finally:
             conn.close()
 
