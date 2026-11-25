@@ -160,8 +160,9 @@ class TestModuloEstoque(unittest.TestCase):
         with self.assertRaises(PermissionError):
             service.excluir_produto(5, usuario_perfil="Estoque")
 
+    @patch('app.compras_service.garantir_estrutura')
     @patch('repositories.produto_repository.ProdutoRepository.listar_todos')
-    def test_api_consulta_estoque_com_pesquisa(self, mock_listar):
+    def test_api_consulta_estoque_com_pesquisa(self, mock_listar, mock_garantir_estrutura):
         """Testa o endpoint /api/produtos recebendo parâmetro de busca."""
         mock_listar.return_value = [
             Produto(id=1, nome="Notebook Gamer", preco=4500.0, estoque=10, codigo="NOT-001", categoria="Informática")
