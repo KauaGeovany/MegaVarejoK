@@ -1,13 +1,26 @@
 from decimal import Decimal, InvalidOperation
 import uuid
 import datetime
+import threading
 from database.connection import DatabaseConnection
 
 
 class ComprasService:
     """Compras, recebimento físico, fornecedores e integração com estoque/financeiro."""
 
+    def __init__(self):
+        self._estrutura_verificada = False
+        self._estrutura_lock = threading.Lock()
+
     def garantir_estrutura(self):
+        if self._estrutura_verificada:
+            return
+        with self._estrutura_lock:
+            if self._estrutura_verificada:
+                return
+            self._garantir_estrutura_interna()
+
+    def _garantir_estrutura_interna(self):
         conn = DatabaseConnection.get_connection()
         try:
             with conn.cursor() as cursor:
@@ -85,7 +98,13 @@ class ComprasService:
                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'produtos' AND COLUMN_NAME = 'custo_medio'
                 """)
                 if not cursor.fetchone()["total"]:
-                    cursor.execute("ALTER TABLE produtos ADD COLUMN custo_medio DECIMAL(12,4) NOT NULL DEFAULT 0")
+                    try:
+                        cursor.execute("ALTER TABLE produtos ADD COLUMN custo_medio DECIMAL(12,4) NOT NULL DEFAULT 0")
+                    except Exception as erro:
+                        if not getattr(erro, "args", None) or erro.args[0] != 1060:
+                            raise
+            conn.commit()
+            self._estrutura_verificada = True
         except Exception:
             conn.rollback()
             raise
