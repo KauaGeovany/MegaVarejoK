@@ -589,6 +589,7 @@ function alternarAbaEstoque(subAbaId) {
 }
 
 async function carregarModuloEstoque() {
+    await fetch('/api/estoque/reposicao'); // Garante a estrutura de lotes e custo médio antes da consulta de produtos.
     await carregarResumoEstoque();
     await carregarProdutos();
     carregarInteligenciaEstoque();
@@ -638,7 +639,7 @@ async function carregarProdutos() {
         tbody.innerHTML = '';
 
         if (produtos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Nenhum produto cadastrado ou encontrado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum produto cadastrado ou encontrado.</td></tr>';
             return;
         }
 
@@ -658,6 +659,7 @@ async function carregarProdutos() {
                 <td><strong>${prod.nome}</strong></td>
                 <td>${prod.categoria || 'Geral'}</td>
                 <td>${formatarMoeda(prod.preco)}</td>
+                <td>${formatarMoeda(prod.custo_medio || 0)}</td>
                 <td><span style="font-weight: 700;">${prod.estoque} un.</span></td>
                 <td>${prod.estoque_minimo || 5} un.</td>
                 <td><span class="status-badge ${badgeClass}">${prod.status_estoque}</span></td>
