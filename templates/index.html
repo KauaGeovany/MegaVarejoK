@@ -54,6 +54,12 @@
                 <button class="nav-item" id="nav-btn-pedidos" onclick="navegarPara('pedidos')" style="display: none;">
                     <svg class="nav-icon" aria-hidden="true"><use href="#icon-cart"></use></svg><span>Pedidos</span>
                 </button>
+                <button class="nav-item" id="nav-btn-compras" onclick="navegarPara('compras')" style="display: none;">
+                    <svg class="nav-icon" aria-hidden="true"><use href="#icon-box"></use></svg><span>Compras</span>
+                </button>
+                <button class="nav-item" id="nav-btn-pdv" onclick="navegarPara('pdv')" style="display: none;">
+                    <svg class="nav-icon" aria-hidden="true"><use href="#icon-cart"></use></svg><span>Frente de Caixa</span>
+                </button>
                 <button class="nav-item" id="nav-btn-logistica" onclick="navegarPara('logistica')" style="display: none;">
                     <svg class="nav-icon" aria-hidden="true"><use href="#icon-truck"></use></svg><span>Logística</span>
                 </button>
@@ -606,6 +612,20 @@
                                 <tr><td colspan="9" style="text-align: center;">Carregando histórico...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Reposição sugerida e controle de validade -->
+                <div id="painel-estoque-inteligencia" class="estoque-inteligencia-grid" style="margin-top:24px;">
+                    <div class="tabela-container">
+                        <div class="tabela-header-actions"><h3>Sugestões de reposição</h3><button class="btn btn-secondary btn-sm" onclick="carregarInteligenciaEstoque()">Atualizar</button></div>
+                        <p class="texto-secundario">Produtos no ponto de reposição ou abaixo dele, com quantidade sugerida para recompor o nível operacional.</p>
+                        <div class="table-responsive"><table class="tabela compact"><thead><tr><th>Produto</th><th>Disponível</th><th>Mínimo</th><th>Sugestão de compra</th></tr></thead><tbody id="tabela-reposicao"><tr><td colspan="4">Carregando...</td></tr></tbody></table></div>
+                    </div>
+                    <div class="tabela-container">
+                        <div class="tabela-header-actions"><h3>Lotes próximos do vencimento</h3><button class="btn btn-secondary btn-sm" onclick="carregarInteligenciaEstoque()">Atualizar</button></div>
+                        <p class="texto-secundario">Lotes com validade vencida ou prevista para os próximos 30 dias.</p>
+                        <div class="table-responsive"><table class="tabela compact"><thead><tr><th>Produto</th><th>Lote</th><th>Quantidade</th><th>Validade</th><th>Situação</th></tr></thead><tbody id="tabela-lotes-validade"><tr><td colspan="5">Carregando...</td></tr></tbody></table></div>
                     </div>
                 </div>
 
@@ -1337,6 +1357,98 @@
                                 <tr><td colspan="7" style="text-align: center;">Carregando fornecedores...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MÓDULO COMPRAS E FORNECEDORES -->
+            <section id="modulo-compras" class="modulo">
+                <header class="section-header">
+                    <h1>Compras e Fornecedores</h1>
+                    <p>Ordens de compra, recebimento de mercadorias e integração automática com estoque e financeiro.</p>
+                </header>
+                <div class="compras-layout">
+                    <div class="painel-form">
+                        <h3>Cadastro de fornecedor</h3>
+                        <form id="form-fornecedor-compra" onsubmit="salvarFornecedorCompra(event)">
+                            <div class="form-row">
+                                <div class="form-group flex-2"><label>Razão social / Nome *</label><input id="forn-razao" required maxlength="150"></div>
+                                <div class="form-group flex-1"><label>CNPJ / CPF</label><input id="forn-documento" maxlength="20"></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group flex-1"><label>E-mail</label><input id="forn-email" type="email"></div>
+                                <div class="form-group flex-1"><label>Telefone</label><input id="forn-telefone"></div>
+                                <div class="form-group flex-1"><label>Categoria</label><input id="forn-categoria" value="Geral"></div>
+                            </div>
+                            <button class="btn btn-primary" type="submit">Cadastrar fornecedor</button>
+                        </form>
+                    </div>
+                    <div class="painel-form">
+                        <h3>Nova ordem de compra</h3>
+                        <div class="form-row">
+                            <div class="form-group flex-2"><label>Fornecedor *</label><select id="compra-fornecedor"><option value="">Selecione</option></select></div>
+                            <div class="form-group flex-1"><label>Previsão de entrega</label><input type="date" id="compra-previsao"></div>
+                            <div class="form-group flex-1"><label>Condição de pagamento</label><select id="compra-condicao"><option>A prazo</option><option>À vista</option><option>30 dias</option><option>30/60 dias</option></select></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group flex-2"><label>Produto *</label><select id="compra-produto"></select></div>
+                            <div class="form-group flex-1"><label>Quantidade *</label><input id="compra-quantidade" type="number" min="1" value="1"></div>
+                            <div class="form-group flex-1"><label>Custo unitário (R$) *</label><input id="compra-custo" type="number" min="0.01" step="0.01"></div>
+                            <div class="form-group flex-auto" style="justify-content:flex-end"><button class="btn btn-secondary" type="button" onclick="adicionarItemCompra()">Adicionar item</button></div>
+                        </div>
+                        <div class="table-responsive"><table class="tabela compact"><thead><tr><th>Produto</th><th>Quantidade</th><th>Custo unitário</th><th>Subtotal</th><th></th></tr></thead><tbody id="tabela-itens-compra"><tr><td colspan="5">Nenhum item adicionado.</td></tr></tbody></table></div>
+                        <div class="compras-total">Total estimado: <strong id="compra-total">R$ 0,00</strong></div>
+                        <div class="form-row"><div class="form-group flex-2"><label>Observações</label><input id="compra-observacoes" placeholder="Condições, referência ou instruções"></div></div>
+                        <button class="btn btn-primary" type="button" onclick="criarOrdemCompra()">Criar ordem de compra</button>
+                    </div>
+                    <div class="tabela-container">
+                        <div class="tabela-header-actions"><h3>Ordens de compra</h3><button class="btn btn-secondary btn-sm" onclick="carregarCompras()">Atualizar</button></div>
+                        <div class="table-responsive"><table class="tabela"><thead><tr><th>Ordem</th><th>Fornecedor</th><th>Data</th><th>Total</th><th>Recebido</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tabela-compras"><tr><td colspan="7">Carregando...</td></tr></tbody></table></div>
+                    </div>
+                    <div class="painel-form">
+                        <h3>Registrar recebimento</h3>
+                        <p class="texto-secundario">Selecione a ordem, informe validade/lote quando aplicável e registre a quantidade efetivamente recebida. O estoque e o custo médio serão atualizados.</p>
+                        <div class="form-row">
+                            <div class="form-group flex-2"><label>Ordem de compra</label><select id="recebimento-compra"><option value="">Selecione uma ordem</option></select></div>
+                            <div class="form-group flex-1"><label>Data de validade (opcional)</label><input type="date" id="recebimento-validade"></div>
+                            <div class="form-group flex-1"><label>Identificação do lote</label><input id="recebimento-lote"></div>
+                            <div class="form-group flex-1"><label>Vencimento financeiro</label><input type="date" id="recebimento-vencimento"></div>
+                        </div>
+                        <div id="recebimento-itens" class="recebimento-itens"><span class="texto-secundario">Selecione uma ordem para carregar os itens pendentes.</span></div>
+                        <button class="btn btn-primary" type="button" onclick="registrarRecebimentoCompra()">Confirmar recebimento</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FRENTE DE CAIXA / PDV -->
+            <section id="modulo-pdv" class="modulo">
+                <header class="section-header">
+                    <h1>Frente de Caixa</h1>
+                    <p>Registro de vendas presenciais, recebimento imediato e fechamento de caixa.</p>
+                </header>
+                <div class="painel-form pdv-caixa-bar">
+                    <div><span class="texto-secundario">Situação do caixa</span><strong id="pdv-status-caixa">Verificando...</strong><small id="pdv-operador-caixa"></small></div>
+                    <div class="form-group"><label>Saldo inicial / valor contado (R$)</label><input id="pdv-saldo-caixa" type="number" min="0" step="0.01" value="0"></div>
+                    <button class="btn btn-primary" id="pdv-btn-abrir" onclick="abrirCaixaPDV()">Abrir caixa</button>
+                    <button class="btn btn-secondary" id="pdv-btn-fechar" onclick="fecharCaixaPDV()" style="display:none">Fechar e conferir caixa</button>
+                </div>
+                <div class="pdv-grid">
+                    <div class="painel-form">
+                        <h3>Registrar venda</h3>
+                        <div class="form-row">
+                            <div class="form-group flex-2"><label>Produto</label><select id="pdv-produto"></select></div>
+                            <div class="form-group flex-1"><label>Quantidade</label><input id="pdv-quantidade" type="number" min="1" value="1"></div>
+                            <div class="form-group flex-auto" style="justify-content:flex-end"><button class="btn btn-secondary" onclick="adicionarItemPDV()" type="button">Adicionar</button></div>
+                        </div>
+                        <div class="table-responsive"><table class="tabela compact"><thead><tr><th>Produto</th><th>Qtd.</th><th>Preço</th><th>Subtotal</th><th></th></tr></thead><tbody id="pdv-itens"><tr><td colspan="5">Nenhum produto adicionado.</td></tr></tbody></table></div>
+                    </div>
+                    <div class="painel-form pdv-resumo">
+                        <h3>Pagamento</h3>
+                        <div class="form-group"><label>Cliente (opcional)</label><select id="pdv-cliente"><option value="">Consumidor final</option></select></div>
+                        <div class="form-group"><label>Forma de pagamento</label><select id="pdv-forma-pagamento"><option>Dinheiro</option><option>PIX</option><option>Cartão de Débito</option><option>Cartão de Crédito</option></select></div>
+                        <div class="form-group"><label>Desconto (R$)</label><input id="pdv-desconto" type="number" min="0" step="0.01" value="0"></div>
+                        <div class="pdv-total"><span>Total a receber</span><strong id="pdv-total">R$ 0,00</strong></div>
+                        <button class="btn btn-primary btn-block" type="button" onclick="concluirVendaPDV()">Finalizar venda</button>
                     </div>
                 </div>
             </section>
