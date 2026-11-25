@@ -9,6 +9,26 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: megavarejo_erp
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      MYSQLHOST: 127.0.0.1
+      MYSQLPORT: 3306
+      MYSQLUSER: root
+      MYSQLPASSWORD: root
+      MYSQL_DATABASE: megavarejo_erp
+      CI_MYSQL_TEST: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,5 +48,19 @@ jobs:
           node-version: 20
       - run: node --check static/js/app.js
       - run: node --check static/js/logistica.js
-      - name: Run automated tests
+      - name: Apply database schema to isolated MySQL
+        run: |
+          python - <<'PY'
+          import pymysql
+          from pymysql.constants import CLIENT
+          conn = pymysql.connect(host='127.0.0.1', port=3306, user='root', password='root', database='megavarejo_erp', charset='utf8mb4', autocommit=True, client_flag=CLIENT.MULTI_STATEMENTS)
+          cursor = conn.cursor()
+          cursor.execute(open('schema.sql', encoding='utf-8').read())
+          while cursor.nextset():
+              pass
+          cursor.close()
+          conn.close()
+          print('Schema aplicado ao MySQL isolado do CI.')
+          PY
+      - name: Run automated and database integration tests
         run: python -m unittest discover -v
