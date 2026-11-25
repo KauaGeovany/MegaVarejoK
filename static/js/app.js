@@ -1210,6 +1210,7 @@ async function finalizarPedido() {
         document.getElementById('pedido-desconto').value = '0.00';
         document.getElementById('pedido-frete').value = '0.00';
         if (document.getElementById('pedido-transportadora')) document.getElementById('pedido-transportadora').value = '';
+        if (document.getElementById('pedido-frete')) document.getElementById('pedido-frete').readOnly = false;
         if (document.getElementById('pedido-peso')) document.getElementById('pedido-peso').value = '0';
         if (document.getElementById('pedido-frete-ajuda')) document.getElementById('pedido-frete-ajuda').textContent = 'Selecione uma transportadora para calcular automaticamente.';
 
