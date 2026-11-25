@@ -131,7 +131,7 @@
                 </div>
                 <div class="dash-alertas-grid" id="dash-alertas-container">
                     <div class="alerta-card alerta-card-danger" onclick="navegarPara('pedidos')">
-                        <div class="alerta-icon">⏱️</div>
+                        <div class="alerta-icon"><svg class="metric-icon" aria-hidden="true"><use href="#icon-clock"></use></svg></div>
                         <div class="alerta-info">
                             <h4 id="alerta-pedidos-atrasados">0</h4>
                             <span>Pedidos Atrasados</span>
@@ -140,7 +140,7 @@
                     </div>
 
                     <div class="alerta-card alerta-card-warning" onclick="navegarPara('produtos')">
-                        <div class="alerta-icon">📦</div>
+                        <div class="alerta-icon"><svg class="metric-icon" aria-hidden="true"><use href="#icon-box"></use></svg></div>
                         <div class="alerta-info">
                             <h4 id="alerta-estoque-baixo">0</h4>
                             <span>Estoque Baixo / Crítico</span>
@@ -149,7 +149,7 @@
                     </div>
 
                     <div class="alerta-card alerta-card-danger" onclick="navegarPara('financeiro')">
-                        <div class="alerta-icon">📅</div>
+                        <div class="alerta-icon"><svg class="metric-icon" aria-hidden="true"><use href="#icon-calendar"></use></svg></div>
                         <div class="alerta-info">
                             <h4 id="alerta-receber-vencidas">0</h4>
                             <span>Contas a Receber Vencidas</span>
@@ -158,7 +158,7 @@
                     </div>
 
                     <div class="alerta-card alerta-card-warning" onclick="navegarPara('financeiro')">
-                        <div class="alerta-icon">💸</div>
+                        <div class="alerta-icon"><svg class="metric-icon" aria-hidden="true"><use href="#icon-banknote"></use></svg></div>
                         <div class="alerta-info">
                             <h4 id="alerta-pagar-vencendo">0</h4>
                             <span>Contas a Pagar a Vencer (3d)</span>
@@ -167,7 +167,7 @@
                     </div>
 
                     <div class="alerta-card alerta-card-info" onclick="navegarPara('pedidos')">
-                        <div class="alerta-icon">🚚</div>
+                        <div class="alerta-icon"><svg class="metric-icon" aria-hidden="true"><use href="#icon-truck"></use></svg></div>
                         <div class="alerta-info">
                             <h4 id="alerta-entregas-atrasadas">0</h4>
                             <span>Entregas em Atraso</span>
@@ -231,12 +231,9 @@
                     </div>
                 </div>
 
-                <!-- 3. Resumo Financeiro (Livro-Caixa e Títulos) -->
-                <div class="dash-secao-titulo" style="margin-top: 25px;">
-                    <h3><svg class="section-icon" aria-hidden="true"><use href="#icon-wallet"></use></svg>Resumo financeiro</h3>
-                    <small>Fluxo de caixa efetivo e posições a receber e pagar (respeitando a distinção entre faturamento e caixa)</small>
-                </div>
-                <div class="cards-grid dash-financeiro-grid">
+                <details class="dash-expand-section">
+                    <summary><span>Resumo financeiro</span><small>Indicadores de caixa, entradas, saídas e compromissos</small><span class="dash-expand-hint">Ver resumo</span></summary>
+                    <div class="cards-grid dash-financeiro-grid">
                     <div class="card card-destaque-fin" style="border-left: 4px solid #10b981;">
                         <span class="card-title">Saldo Disponível em Caixa</span>
                         <div class="card-value" id="dash-fin-saldo" style="color: #10b981;">R$ 0,00</div>
@@ -266,14 +263,15 @@
                         <div class="card-value" id="dash-fin-pagar" style="color: #7c3aed;">R$ 0,00</div>
                         <small class="card-criterio">Compromissos pendentes com fornecedores</small>
                     </div>
-                </div>
+                    </div>
+                </details>
 
                 <!-- 4. Desempenho de Vendas: Gráficos -->
                 <div class="dash-graficos-row" style="margin-top: 25px;">
                     <div class="dash-grafico-container" style="flex: 2;">
                         <div class="dash-grafico-header">
                             <div>
-                                <h4>📊 Evolução do Faturamento</h4>
+                                <h4><svg class="metric-icon" aria-hidden="true"><use href="#icon-chart"></use></svg> Evolução do faturamento</h4>
                                 <small>Faturamento bruto ao longo do tempo</small>
                             </div>
                             <div class="dash-agrupamento-btn-group">
@@ -290,7 +288,7 @@
                     <div class="dash-grafico-container" style="flex: 1;">
                         <div class="dash-grafico-header">
                             <div>
-                                <h4>🍩 Distribuição por Status</h4>
+                                <h4><svg class="metric-icon" aria-hidden="true"><use href="#icon-chart"></use></svg> Distribuição por status</h4>
                                 <small>Volume de pedidos no período</small>
                             </div>
                         </div>
@@ -300,13 +298,14 @@
                     </div>
                 </div>
 
-                <!-- 6 & 7. Desempenho Operacional e Atividades Recentes -->
+                <details class="dash-expand-section dash-operacional-details">
+                    <summary><span>Detalhamento operacional</span><small>Pedidos, produtos, entregas e atividades recentes</small><span class="dash-expand-hint">Ver detalhes</span></summary>
                 <div class="dash-operacional-grid" style="margin-top: 25px;">
                     <!-- Coluna Esquerda: Pedidos Recentes e Produtos Mais Vendidos -->
                     <div class="dash-coluna-operacional">
                         <div class="dash-card-tabela">
                             <div class="dash-tabela-header">
-                                <h4>🛍️ Pedidos Recentes</h4>
+                                <h4>Pedidos recentes</h4>
                                 <button class="btn btn-link btn-sm" onclick="navegarPara('pedidos')">Ver Todos ➔</button>
                             </div>
                             <div class="table-responsive">
@@ -329,7 +328,7 @@
 
                         <div class="dash-card-tabela" style="margin-top: 20px;">
                             <div class="dash-tabela-header">
-                                <h4>🏆 Produtos Mais Vendidos no Período</h4>
+                                <h4>Produtos mais vendidos no período</h4>
                                 <button class="btn btn-link btn-sm" onclick="navegarPara('produtos')">Estoque ➔</button>
                             </div>
                             <div class="table-responsive">
@@ -351,7 +350,7 @@
 
                         <div class="dash-card-tabela" style="margin-top: 20px;">
                             <div class="dash-tabela-header">
-                                <h4>🚚 Entregas em Andamento</h4>
+                                <h4>Entregas em andamento</h4>
                                 <button class="btn btn-link btn-sm" onclick="navegarPara('pedidos')">Expedição ➔</button>
                             </div>
                             <div class="table-responsive">
@@ -376,7 +375,7 @@
                     <div class="dash-coluna-atividades">
                         <div class="dash-card-atividades">
                             <div class="dash-tabela-header">
-                                <h4>📜 Atividades Recentes no Sistema</h4>
+                                <h4>Atividades recentes no sistema</h4>
                                 <small>Auditoria em tempo real</small>
                             </div>
                             <div class="dash-timeline-atividades" id="dash-timeline-atividades">
@@ -385,6 +384,8 @@
                         </div>
                     </div>
                 </div>
+                </details>
+
             </section>
 
             <!-- 2. MÓDULO ESTOQUE (REFORMULADO) -->
@@ -412,11 +413,11 @@
 
                 <!-- Sub-navegação interna do Estoque -->
                 <div class="estoque-tabs">
-                    <button class="tab-btn active" onclick="alternarAbaEstoque('consulta')">📋 Consulta de Estoque</button>
-                    <button class="tab-btn" onclick="alternarAbaEstoque('movimentacoes')">🔄 Entradas e Saídas</button>
-                    <button class="tab-btn" onclick="alternarAbaEstoque('ajustes')">⚖️ Ajustes de Inventário</button>
-                    <button class="tab-btn" onclick="alternarAbaEstoque('historico')">📜 Histórico de Movimentações</button>
-                    <button class="tab-btn" onclick="alternarAbaEstoque('relatorios')">📈 Relatórios</button>
+                    <button class="tab-btn active" onclick="alternarAbaEstoque('consulta')"> Consulta de Estoque</button>
+                    <button class="tab-btn" onclick="alternarAbaEstoque('movimentacoes')"> Entradas e Saídas</button>
+                    <button class="tab-btn" onclick="alternarAbaEstoque('ajustes')"> Ajustes de Inventário</button>
+                    <button class="tab-btn" onclick="alternarAbaEstoque('historico')"> Histórico de Movimentações</button>
+                    <button class="tab-btn" onclick="alternarAbaEstoque('relatorios')"> Relatórios</button>
                 </div>
 
                 <!-- SUB-ABA 1: CONSULTA DE ESTOQUE E CADASTRO/EDIÇÃO -->
@@ -508,8 +509,8 @@
                                 <div class="form-group flex-1">
                                     <label for="mov-tipo">Tipo de Movimentação *</label>
                                     <select id="mov-tipo" required>
-                                        <option value="Entrada">📥 Entrada (+)</option>
-                                        <option value="Saída">📤 Saída (-)</option>
+                                        <option value="Entrada"> Entrada (+)</option>
+                                        <option value="Saída"> Saída (-)</option>
                                     </select>
                                 </div>
                                 <div class="form-group flex-1">
@@ -578,7 +579,7 @@
                     <div class="tabela-container">
                         <div class="tabela-header-actions">
                             <h3>Histórico Geral de Movimentações</h3>
-                            <button class="btn btn-secondary btn-sm" onclick="carregarHistoricoMovimentacoes()">🔄 Atualizar</button>
+                            <button class="btn btn-secondary btn-sm" onclick="carregarHistoricoMovimentacoes()"> Atualizar</button>
                         </div>
                         <table class="tabela">
                             <thead>
@@ -606,7 +607,7 @@
                     <div class="relatorios-grid">
                         <!-- Relatório 1: Estoque Baixo ou Zerado -->
                         <div class="tabela-container">
-                            <h3 style="color: #dc2626;">🚨 Produtos com Estoque Baixo ou Zerado</h3>
+                            <h3 style="color: #dc2626;"> Produtos com Estoque Baixo ou Zerado</h3>
                             <table class="tabela compact">
                                 <thead>
                                     <tr>
@@ -625,7 +626,7 @@
 
                         <!-- Relatório 2: Produtos com Maior Movimentação -->
                         <div class="tabela-container" style="margin-top: 24px;">
-                            <h3>📊 Produtos com Maior Movimentação</h3>
+                            <h3> Produtos com Maior Movimentação</h3>
                             <table class="tabela compact">
                                 <thead>
                                     <tr>
@@ -654,35 +655,35 @@
                 <!-- 1. Indicadores Operacionais Clicáveis -->
                 <div class="cards-grid pedidos-kpis" style="margin-bottom: 24px;">
                     <div class="card card-kpi-pedido" id="kpi-card-aguardando_pagamento" onclick="filtrarPorIndicador('Aguardando Pagamento')" title="Filtrar pedidos aguardando pagamento">
-                        <div class="card-icon">💳</div>
+                        <div class="card-icon"></div>
                         <div class="card-info">
                             <span class="card-label">Aguardando Pagamento</span>
                             <strong class="card-value" id="kpi-pedidos-aguardando-pagamento">0</strong>
                         </div>
                     </div>
                     <div class="card card-kpi-pedido" id="kpi-card-aguardando_separacao" onclick="filtrarPorIndicador('Aguardando Separação')" title="Filtrar pedidos aguardando separação">
-                        <div class="card-icon">📋</div>
+                        <div class="card-icon"></div>
                         <div class="card-info">
                             <span class="card-label">Aguardando Separação</span>
                             <strong class="card-value" id="kpi-pedidos-aguardando-separacao">0</strong>
                         </div>
                     </div>
                     <div class="card card-kpi-pedido" id="kpi-card-em_separacao" onclick="filtrarPorIndicador('Em Separação')" title="Filtrar pedidos em separação">
-                        <div class="card-icon">📦</div>
+                        <div class="card-icon"></div>
                         <div class="card-info">
                             <span class="card-label">Em Separação</span>
                             <strong class="card-value" id="kpi-pedidos-em-separacao">0</strong>
                         </div>
                     </div>
                     <div class="card card-kpi-pedido" id="kpi-card-pronto_para_envio" onclick="filtrarPorIndicador('Pronto para Envio')" title="Filtrar pedidos prontos para envio">
-                        <div class="card-icon">🚚</div>
+                        <div class="card-icon"></div>
                         <div class="card-info">
                             <span class="card-label">Prontos para Envio</span>
                             <strong class="card-value" id="kpi-pedidos-prontos-envio">0</strong>
                         </div>
                     </div>
                     <div class="card card-kpi-pedido card-kpi-alerta" id="kpi-card-atrasados" onclick="filtrarPorIndicador('Atrasados')" title="Filtrar pedidos com data prevista ultrapassada">
-                        <div class="card-icon">⏰</div>
+                        <div class="card-icon"></div>
                         <div class="card-info">
                             <span class="card-label">Atrasados</span>
                             <strong class="card-value" id="kpi-pedidos-atrasados">0</strong>
@@ -842,7 +843,7 @@
                                 <input type="date" id="filtro-ped-data-fim">
                             </div>
                             <div class="form-group flex-auto" style="display: flex; gap: 8px;">
-                                <button type="button" class="btn btn-primary btn-sm" onclick="aplicarFiltrosPedidos()">🔍 Filtrar</button>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="aplicarFiltrosPedidos()"> Filtrar</button>
                                 <button type="button" class="btn btn-secondary btn-sm" onclick="limparFiltrosPedidos()">✕ Limpar</button>
                             </div>
                         </div>
@@ -955,7 +956,7 @@
                     <div class="tabela-header-actions">
                         <h3>Clientes Cadastrados</h3>
                         <div class="busca-box">
-                            <input type="text" id="busca-cliente" placeholder="🔍 Pesquisar por nome, CPF ou e-mail..." oninput="filtrarClientesAoDigitar()">
+                            <input type="text" id="busca-cliente" placeholder=" Pesquisar por nome, CPF ou e-mail..." oninput="filtrarClientesAoDigitar()">
                         </div>
                     </div>
                     <table class="tabela">
@@ -1042,26 +1043,26 @@
             </section>
 
             <!-- 6. MÓDULO FINANCEIRO -->
-            <section id="modulo-financeiro" class="modulo">
+            <section id="modulo-financeiro" class="modulo modulo-financeiro">
                 <header class="modulo-header">
-                    <h2>💰 Gestão Financeira</h2>
+                    <h2><svg class="metric-icon" aria-hidden="true"><use href="#icon-wallet"></use></svg> Gestão financeira</h2>
                     <p>Controle de fluxo de caixa, contas a pagar, contas a receber e resultado operacional.</p>
                 </header>
 
                 <!-- Sub-abas do Financeiro -->
-                <div class="tabs-estoque" style="margin-bottom: 20px;">
-                    <button class="tab-btn active" id="tab-btn-fin-visao" onclick="alternarAbaFinanceiro('visao')">📊 Visão Geral</button>
-                    <button class="tab-btn" id="tab-btn-fin-pagar" onclick="alternarAbaFinanceiro('pagar')">📤 Contas a Pagar</button>
-                    <button class="tab-btn" id="tab-btn-fin-receber" onclick="alternarAbaFinanceiro('receber')">📥 Contas a Receber</button>
-                    <button class="tab-btn" id="tab-btn-fin-caixa" onclick="alternarAbaFinanceiro('caixa')">💵 Fluxo de Caixa</button>
-                    <button class="tab-btn" id="tab-btn-fin-fornecedores" onclick="alternarAbaFinanceiro('fornecedores')">🏢 Fornecedores</button>
+                <div class="tabs-estoque finance-tabs" style="margin-bottom: 20px;">
+                    <button class="tab-btn active" id="tab-btn-fin-visao" onclick="alternarAbaFinanceiro('visao')"><svg class="metric-icon" aria-hidden="true"><use href="#icon-chart"></use></svg> Visão geral</button>
+                    <button class="tab-btn" id="tab-btn-fin-pagar" onclick="alternarAbaFinanceiro('pagar')"><svg class="metric-icon" aria-hidden="true"><use href="#icon-banknote"></use></svg> Contas a pagar</button>
+                    <button class="tab-btn" id="tab-btn-fin-receber" onclick="alternarAbaFinanceiro('receber')"><svg class="metric-icon" aria-hidden="true"><use href="#icon-wallet"></use></svg> Contas a receber</button>
+                    <button class="tab-btn" id="tab-btn-fin-caixa" onclick="alternarAbaFinanceiro('caixa')"><svg class="metric-icon" aria-hidden="true"><use href="#icon-chart"></use></svg> Fluxo de caixa</button>
+                    <button class="tab-btn" id="tab-btn-fin-fornecedores" onclick="alternarAbaFinanceiro('fornecedores')"><svg class="metric-icon" aria-hidden="true"><use href="#icon-users"></use></svg> Fornecedores</button>
                 </div>
 
                 <!-- SUB-ABA 1: VISÃO GERAL -->
                 <div id="sub-fin-visao" class="sub-fin-content active">
-                    <div class="dashboard-cards" style="margin-bottom: 25px;">
-                        <div class="card card-destaque" style="border-left: 4px solid #10b981;">
-                            <div class="card-icon">💵</div>
+                    <div class="dashboard-cards finance-kpi-grid" style="margin-bottom: 25px;">
+                        <div class="card card-destaque finance-kpi finance-kpi-primary" style="border-left: 4px solid #10b981;">
+                            <div class="card-icon"><svg class="metric-icon" aria-hidden="true"><use href="#icon-wallet"></use></svg></div>
                             <div class="card-info">
                                 <h3>Saldo Disponível (Caixa)</h3>
                                 <p class="card-valor" id="fin-saldo-caixa">R$ 0,00</p>
@@ -1069,8 +1070,8 @@
                             </div>
                         </div>
 
-                        <div class="card" style="border-left: 4px solid #3b82f6;">
-                            <div class="card-icon">📈</div>
+                        <div class="card finance-kpi" style="border-left: 4px solid #3b82f6;">
+                            <div class="card-icon"><svg class="metric-icon" aria-hidden="true"><use href="#icon-chart"></use></svg></div>
                             <div class="card-info">
                                 <h3>Receitas (Vendas)</h3>
                                 <p class="card-valor" id="fin-receitas-totais">R$ 0,00</p>
@@ -1078,8 +1079,8 @@
                             </div>
                         </div>
 
-                        <div class="card" style="border-left: 4px solid #ef4444;">
-                            <div class="card-icon">📉</div>
+                        <div class="card finance-kpi" style="border-left: 4px solid #ef4444;">
+                            <div class="card-icon"><svg class="metric-icon" aria-hidden="true"><use href="#icon-chart"></use></svg></div>
                             <div class="card-info">
                                 <h3>Despesas Incorridas</h3>
                                 <p class="card-valor" id="fin-despesas-totais">R$ 0,00</p>
@@ -1087,8 +1088,8 @@
                             </div>
                         </div>
 
-                        <div class="card" style="border-left: 4px solid #8b5cf6;">
-                            <div class="card-icon">⚖️</div>
+                        <div class="card finance-kpi" style="border-left: 4px solid #8b5cf6;">
+                            <div class="card-icon"><svg class="metric-icon" aria-hidden="true"><use href="#icon-banknote"></use></svg></div>
                             <div class="card-info">
                                 <h3>Resultado Operacional Simplificado</h3>
                                 <p class="card-valor" id="fin-resultado-simplificado">R$ 0,00</p>
@@ -1099,12 +1100,12 @@
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                         <div class="card" style="border-left: 4px solid #f59e0b;">
-                            <h4>📥 Contas a Receber (Pendente)</h4>
+                            <h4>Contas a receber · pendente</h4>
                             <p class="card-valor" id="fin-receber-pendente" style="font-size: 1.5rem; margin-top: 10px;">R$ 0,00</p>
                             <p style="color: #64748b; font-size: 0.9rem;">Valores pendentes de conciliação em pedidos.</p>
                         </div>
                         <div class="card" style="border-left: 4px solid #dc2626;">
-                            <h4>📤 Contas a Pagar (Pendente)</h4>
+                            <h4>Contas a pagar · pendente</h4>
                             <p class="card-valor" id="fin-pagar-pendente" style="font-size: 1.5rem; margin-top: 10px;">R$ 0,00</p>
                             <p style="color: #64748b; font-size: 0.9rem;">Obrigações e despesas com fornecedores em aberto.</p>
                         </div>
