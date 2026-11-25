@@ -1491,3 +1491,24 @@ body {
     .finance-tabs { overflow-x:auto; flex-wrap:nowrap; }
     .finance-tabs .tab-btn { flex:0 0 auto; white-space:nowrap; }
 }
+
+
+/* Módulo de Logística */
+.logistica-kpis .card { border-left: 3px solid #94a3b8; }
+.logistica-kpis .card-kpi-alerta { border-left-color: #dc2626; }
+.log-form-transportadora { padding: 18px; margin: 16px 0; border: 1px solid #dbe3ed; border-radius: 10px; background: #f8fafc; }
+.log-filtros { align-items: flex-end; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 16px; }
+.log-check { display:flex; align-items:center; gap:8px; min-height:38px; color:#475569; font-size:.88rem; }
+.log-check input { width:16px; height:16px; }
+.modal-logistica-content { max-width: 680px; }
+.modal-logistica-content .form-group { margin-bottom: 12px; }
+.modal-logistica-content input, .modal-logistica-content select, .modal-logistica-content textarea {
+    width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font:inherit; background:#fff;
+}
+.texto-secundario { color:#64748b; font-size:.86rem; margin-top:4px; }
+.table-responsive { width:100%; overflow-x:auto; }
+.table-responsive .tabela { min-width:760px; }
+@media (max-width: 768px) {
+    .logistica-kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .log-filtros { flex-direction:column; }
+}
