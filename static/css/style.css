@@ -1512,3 +1512,26 @@ body {
     .logistica-kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
     .log-filtros { flex-direction:column; }
 }
+
+
+/* Compras, PDV e inteligência de estoque */
+.compras-layout { display:flex; flex-direction:column; gap:20px; }
+.compras-total { display:flex; justify-content:flex-end; gap:10px; align-items:center; padding:14px 0; color:#475569; }
+.compras-total strong { color:#0f172a; font-size:1.25rem; }
+.recebimento-itens { display:grid; gap:10px; margin:12px 0 18px; }
+.recebimento-item { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:10px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; }
+.recebimento-item label { color:#334155; font-weight:600; }
+.recebimento-item input { width:120px; padding:8px; border:1px solid #cbd5e1; border-radius:6px; }
+.estoque-inteligencia-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+.pdv-caixa-bar { display:flex; align-items:flex-end; flex-wrap:wrap; gap:16px; }
+.pdv-caixa-bar > div:first-child { display:flex; flex-direction:column; gap:4px; margin-right:auto; }
+.pdv-caixa-bar .form-group { min-width:220px; }
+.pdv-status-aberto { color:#15803d; font-weight:700; }
+.pdv-status-fechado { color:#b45309; font-weight:700; }
+.pdv-grid { display:grid; grid-template-columns:minmax(0,2fr) minmax(280px,1fr); gap:20px; align-items:start; }
+.pdv-resumo { position:sticky; top:20px; }
+.pdv-total { display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e2e8f0; margin:20px 0; padding-top:18px; color:#475569; }
+.pdv-total strong { font-size:1.8rem; color:#0f172a; }
+.btn-block { width:100%; }
+@media (max-width: 900px) { .estoque-inteligencia-grid,.pdv-grid { grid-template-columns:1fr; } .pdv-resumo { position:static; } }
+@media (max-width: 600px) { .recebimento-item { align-items:flex-start; flex-direction:column; } .pdv-caixa-bar { align-items:stretch; } }
