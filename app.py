@@ -56,10 +56,10 @@ compras_service = ComprasService()
 # Dicionário de permissões mantido para compatibilidade com importações em testes
 ROLE_PERMISSIONS = {
     'Administrador': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'usuarios', 'financeiro', 'logistica', 'compras', 'pdv'},
-    'Estoque': {'dashboard', 'produtos', 'estoque', 'logistica'},
-    'Vendas': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'logistica'},
-    'Gerência': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'financeiro', 'logistica'},
-    'Financeiro': {'dashboard', 'pedidos', 'financeiro'}
+    'Estoque': {'dashboard', 'produtos', 'estoque', 'logistica', 'compras'},
+    'Vendas': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'logistica', 'pdv'},
+    'Gerência': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'financeiro', 'logistica', 'compras', 'pdv'},
+    'Financeiro': {'dashboard', 'pedidos', 'financeiro', 'compras'}
 }
 
 
