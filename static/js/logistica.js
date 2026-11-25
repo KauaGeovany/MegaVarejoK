@@ -66,6 +66,9 @@ async function carregarTransportadorasLogistica() {
         logisticaTransportadorasCache = dados;
         tbody.innerHTML = '';
         if (!dados.length) { tbody.innerHTML = '<tr><td colspan="7">Nenhuma transportadora cadastrada.</td></tr>'; return; }
+        const podeGerenciarTransportadoras = usuarioAtual && ['Administrador', 'Gerência'].includes(usuarioAtual.perfil);
+        const botaoCadastro = document.getElementById('btn-cadastrar-transportadora');
+        if (botaoCadastro) botaoCadastro.style.display = podeGerenciarTransportadoras ? 'inline-flex' : 'none';
         dados.forEach(t => {
             const regra = t.modelo_frete === 'PESO' ? 'Por peso' : t.modelo_frete === 'PERCENTUAL' ? 'Percentual' : 'Fixo';
             const adicional = t.modelo_frete === 'PESO' ? formatarMoeda(t.valor_por_kg) + '/kg' : t.modelo_frete === 'PERCENTUAL' ? t.percentual + '%' : '—';
@@ -73,8 +76,8 @@ async function carregarTransportadorasLogistica() {
             tr.innerHTML = '<td><strong>' + escaparLogistica(t.nome) + '</strong><br><small>' + escaparLogistica(t.documento || 'Sem documento') + '</small></td>' +
                 '<td>' + regra + '</td><td>' + formatarMoeda(t.taxa_fixa) + '</td><td>' + adicional + '</td><td>' + t.prazo_dias + ' dias</td>' +
                 '<td><span class="status-badge ' + (Number(t.ativo) ? 'badge-ativo':'badge-inativo') + '">' + (Number(t.ativo) ? 'Ativa':'Inativa') + '</span></td>' +
-                '<td><button class="btn btn-secondary btn-sm" onclick="editarTransportadora(' + t.id + ')">Editar</button> ' +
-                '<button class="btn btn-sm ' + (Number(t.ativo) ? 'btn-danger':'btn-success') + '" onclick="alternarTransportadora(' + t.id + ',' + (Number(t.ativo) ? 'false':'true') + ')">' + (Number(t.ativo) ? 'Desativar':'Ativar') + '</button></td>';
+                '<td>' + (podeGerenciarTransportadoras ? '<button class="btn btn-secondary btn-sm" onclick="editarTransportadora(' + t.id + ')">Editar</button> ' +
+                '<button class="btn btn-sm ' + (Number(t.ativo) ? 'btn-danger':'btn-success') + '" onclick="alternarTransportadora(' + t.id + ',' + (Number(t.ativo) ? 'false':'true') + ')">' + (Number(t.ativo) ? 'Desativar':'Ativar') + '</button>' : 'Consulta') + '</td>';
             tbody.appendChild(tr);
         });
     } catch (e) { tbody.innerHTML = '<tr><td colspan="7">' + escaparLogistica(e.message) + '</td></tr>'; }
