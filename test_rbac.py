@@ -77,8 +77,9 @@ class TestAuthRBAC(unittest.TestCase):
         self.assertEqual(res_me.status_code, 401)
 
     # 4. TESTE RBAC - PERFIL ESTOQUE
+    @patch('app.compras_service.garantir_estrutura')
     @patch('app.get_db_connection')
-    def test_rbac_perfil_estoque(self, mock_db_conn):
+    def test_rbac_perfil_estoque(self, mock_db_conn, mock_garantir_estrutura):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
         mock_db_conn.return_value = mock_conn
@@ -108,8 +109,9 @@ class TestAuthRBAC(unittest.TestCase):
         self.assertEqual(res_usr.status_code, 403)
 
     # 5. TESTE RBAC - PERFIL VENDAS
+    @patch('app.compras_service.garantir_estrutura')
     @patch('app.get_db_connection')
-    def test_rbac_perfil_vendas(self, mock_db_conn):
+    def test_rbac_perfil_vendas(self, mock_db_conn, mock_garantir_estrutura):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
         mock_db_conn.return_value = mock_conn
@@ -131,8 +133,9 @@ class TestAuthRBAC(unittest.TestCase):
         self.assertEqual(self.client.get('/api/usuarios').status_code, 403)
 
     # 6. TESTE RBAC - PERFIL GERENCIA
+    @patch('app.compras_service.garantir_estrutura')
     @patch('app.get_db_connection')
-    def test_rbac_perfil_gerencia(self, mock_db_conn):
+    def test_rbac_perfil_gerencia(self, mock_db_conn, mock_garantir_estrutura):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
         mock_db_conn.return_value = mock_conn
@@ -154,8 +157,9 @@ class TestAuthRBAC(unittest.TestCase):
         self.assertEqual(self.client.get('/api/usuarios').status_code, 403)
 
     # 7. TESTE RBAC - PERFIL ADMINISTRADOR
+    @patch('app.compras_service.garantir_estrutura')
     @patch('app.get_db_connection')
-    def test_rbac_perfil_administrador(self, mock_db_conn):
+    def test_rbac_perfil_administrador(self, mock_db_conn, mock_garantir_estrutura):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
         mock_db_conn.return_value = mock_conn

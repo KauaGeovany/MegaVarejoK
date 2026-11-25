@@ -1,12 +1,26 @@
 from decimal import Decimal, InvalidOperation
 import uuid
+import datetime
+import threading
 from database.connection import DatabaseConnection
 
 
 class ComprasService:
     """Compras, recebimento físico, fornecedores e integração com estoque/financeiro."""
 
+    def __init__(self):
+        self._estrutura_verificada = False
+        self._estrutura_lock = threading.Lock()
+
     def garantir_estrutura(self):
+        if self._estrutura_verificada:
+            return
+        with self._estrutura_lock:
+            if self._estrutura_verificada:
+                return
+            self._garantir_estrutura_interna()
+
+    def _garantir_estrutura_interna(self):
         conn = DatabaseConnection.get_connection()
         try:
             with conn.cursor() as cursor:
@@ -84,7 +98,13 @@ class ComprasService:
                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'produtos' AND COLUMN_NAME = 'custo_medio'
                 """)
                 if not cursor.fetchone()["total"]:
-                    cursor.execute("ALTER TABLE produtos ADD COLUMN custo_medio DECIMAL(12,4) NOT NULL DEFAULT 0")
+                    try:
+                        cursor.execute("ALTER TABLE produtos ADD COLUMN custo_medio DECIMAL(12,4) NOT NULL DEFAULT 0")
+                    except Exception as erro:
+                        if not getattr(erro, "args", None) or erro.args[0] != 1060:
+                            raise
+            conn.commit()
+            self._estrutura_verificada = True
         except Exception:
             conn.rollback()
             raise
@@ -213,7 +233,7 @@ class ComprasService:
                     produto = cursor.fetchone()
                     saldo = int(produto["estoque"])
                     custo_medio = Decimal(str(produto["custo_medio"] or 0))
-                    novo_custo = ((Decimal(saldo) * custo_medio) + (Decimal(qtd) * custo)) / Decimal(saldo + qtd) if saldo + qtd else custo
+                    novo_custo = (((Decimal(saldo) * custo_medio) + (Decimal(qtd) * custo)) / Decimal(saldo + qtd)) if saldo > 0 and custo_medio > 0 else custo
                     novo_saldo = saldo + qtd
                     cursor.execute("UPDATE produtos SET estoque=%s, custo_medio=%s WHERE id=%s", (novo_saldo, novo_custo, produto_id))
                     cursor.execute("""
@@ -232,7 +252,9 @@ class ComprasService:
                 cursor.execute("UPDATE compras SET status=%s, valor_recebido=valor_recebido+%s, data_recebimento=NOW() WHERE id=%s",
                                (status, valor_recebido, compra_id))
                 # Cada recebimento gera obrigação financeira pelo valor efetivamente recebido.
-                vencimento = dados.get("data_vencimento") or ( __import__('datetime').date.today() + __import__('datetime').timedelta(days=30) ).isoformat()
+                condicao = str(compra.get("condicao_pagamento") or "").strip().lower()
+                vencimento_padrao = datetime.date.today() if "vista" in condicao else datetime.date.today() + datetime.timedelta(days=30)
+                vencimento = dados.get("data_vencimento") or vencimento_padrao.isoformat()
                 if vencimento:
                     cursor.execute("""
                         INSERT INTO contas_pagar (descricao,fornecedor_id,categoria,valor_original,valor_pago,data_vencimento,status,responsavel,observacoes)
@@ -280,6 +302,7 @@ class ComprasService:
         finally:
             conn.close()
 
+
     def obter_caixa_aberto(self, operador=None):
         self.garantir_estrutura()
         conn = DatabaseConnection.get_connection()
@@ -315,6 +338,8 @@ class ComprasService:
     def fechar_caixa(self, operador, saldo_informado):
         self.garantir_estrutura()
         saldo = Decimal(str(saldo_informado or 0))
+        if saldo < 0:
+            raise ValueError("O valor contado não pode ser negativo.")
         conn = DatabaseConnection.get_connection()
         try:
             with conn.cursor() as cursor:
@@ -324,15 +349,14 @@ class ComprasService:
                     raise ValueError("Não existe caixa aberto.")
                 cursor.execute("""
                     SELECT COALESCE(SUM(CASE WHEN tipo='Entrada' THEN valor ELSE -valor END),0) movimento
-                    FROM transacoes_caixa WHERE data_transacao >= %s
+                    FROM transacoes_caixa
+                    WHERE data_transacao >= %s AND forma_pagamento='Dinheiro'
                 """, (caixa["aberto_em"],))
                 movimento = Decimal(str(cursor.fetchone()["movimento"] or 0))
                 saldo_sistema = Decimal(str(caixa["saldo_inicial"] or 0)) + movimento
                 diferenca = saldo - saldo_sistema
-                cursor.execute("""
-                    UPDATE caixas SET fechado_em=NOW(),saldo_informado=%s,saldo_sistema=%s,diferenca=%s,status='Fechado'
-                    WHERE id=%s
-                """, (saldo, saldo_sistema, diferenca, caixa["id"]))
+                cursor.execute("UPDATE caixas SET fechado_em=NOW(),saldo_informado=%s,saldo_sistema=%s,diferenca=%s,status='Fechado' WHERE id=%s",
+                               (saldo, saldo_sistema, diferenca, caixa["id"]))
             conn.commit()
             return {"mensagem": "Caixa fechado e conferido.", "saldo_sistema": float(saldo_sistema), "diferenca": float(diferenca)}
         except Exception:

@@ -111,7 +111,7 @@ class Pedido:
     # Transições de fluxo permitidas (Máquina de Estados)
     TRANSIÇÕES_PERMITIDAS = {
         'Aguardando Pagamento': ['Confirmado', 'Cancelado', 'Recusado'],
-        'Confirmado': ['Aguardando Separação', 'Em Separação', 'Cancelado'],
+        'Confirmado': ['Aguardando Separação', 'Em Separação', 'Entregue', 'Cancelado'],
         'Aguardando Separação': ['Em Separação', 'Cancelado'],
         'Em Separação': ['Pronto para Envio', 'Cancelado'],
         'Pronto para Envio': ['Enviado', 'Cancelado'],
@@ -136,7 +136,9 @@ class Pedido:
         'Boleto Bancário',
         'Cartão de Crédito',
         'PIX',
-        'Transferência Bancária'
+        'Transferência Bancária',
+        'Dinheiro',
+        'Cartão de Débito'
     ]
 
     def __init__(self, cliente_id: int = None, status: str = "Aguardando Pagamento",

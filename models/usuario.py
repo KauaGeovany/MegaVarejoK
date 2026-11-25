@@ -133,7 +133,7 @@ class Administrador(Usuario):
     Especialização Administrador: Acesso completo ao sistema e à gestão de usuários.
     Demonstra POLIMORFISMO implementando 'pode_acessar', 'obter_permissoes' e 'pode_executar'.
     """
-    PERMISSOES = {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'usuarios', 'financeiro', 'logistica'}
+    PERMISSOES = {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'usuarios', 'financeiro', 'logistica', 'compras', 'pdv'}
 
     def __init__(self, nome: str, email: str, senha_hash: str = None, ativo: bool = True, criado_em=None, id: int = None, perfil_id: int = 1):
         super().__init__(nome, email, perfil_id, "Administrador", senha_hash, ativo, criado_em, id)
@@ -156,7 +156,7 @@ class Estoquista(Usuario):
     Operações proibidas: alterar preços, cadastrar/editar pedidos, gerenciar clientes, usuários ou financeiro.
     Demonstra POLIMORFISMO.
     """
-    PERMISSOES = {'produtos', 'estoque', 'logistica'}
+    PERMISSOES = {'produtos', 'estoque', 'logistica', 'compras'}
     ACOES_PERMITIDAS = {
         'cadastrar_produto', 'editar_produto', 'movimentar_estoque', 'ajustar_estoque',
         'conferir_devolucao', 'separar_expedir_pedido'
@@ -183,7 +183,7 @@ class Vendedor(Usuario):
     alteração de produtos/preços, confirmação manual de pagamentos, financeiro ou usuários.
     Demonstra POLIMORFISMO.
     """
-    PERMISSOES = {'produtos', 'estoque', 'pedidos', 'clientes', 'logistica'}
+    PERMISSOES = {'produtos', 'estoque', 'pedidos', 'clientes', 'logistica', 'pdv'}
     ACOES_PERMITIDAS = {
         'cadastrar_cliente', 'criar_pedido', 'gerenciar_pedido',
         'cancelar_pedido', 'solicitar_devolucao'
@@ -211,7 +211,7 @@ class Gerente(Usuario):
     cadastro de despesas/pagamentos de caixa, e administração de usuários.
     Demonstra POLIMORFISMO.
     """
-    PERMISSOES = {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'financeiro', 'logistica'}
+    PERMISSOES = {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'financeiro', 'logistica', 'compras', 'pdv'}
     ACOES_PERMITIDAS = {
         'gerenciar_pedido', 'cancelar_pedido', 'solicitar_devolucao', 'conferir_devolucao',
         'separar_expedir_pedido'
@@ -239,7 +239,7 @@ class Financeiro(Usuario):
     movimentações de estoque, alteração de clientes ou usuários.
     Demonstra POLIMORFISMO.
     """
-    PERMISSOES = {'pedidos', 'financeiro'}
+    PERMISSOES = {'pedidos', 'financeiro', 'compras'}
     ACOES_PERMITIDAS = {
         'confirmar_pagamento', 'registrar_reembolso', 'pagar_despesa',
         'cadastrar_despesa', 'cadastrar_fornecedor'
