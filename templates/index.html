@@ -1496,6 +1496,30 @@
         </div>
     </div>
 
+    <!-- Modal de configuração logística -->
+    <div id="modal-logistica" class="modal" style="display:none;">
+        <div class="modal-content modal-logistica-content">
+            <span class="modal-close" onclick="fecharModalLogistica()">&times;</span>
+            <h3>Configuração da entrega</h3>
+            <p id="log-entrega-pedido-label" class="texto-secundario"></p>
+            <input type="hidden" id="log-entrega-pedido-id">
+            <div class="form-row">
+                <div class="form-group flex-2"><label for="log-entrega-transportadora">Transportadora</label><select id="log-entrega-transportadora"></select></div>
+                <div class="form-group flex-1"><label for="log-entrega-peso">Peso (kg)</label><input id="log-entrega-peso" type="number" min="0" step="0.001"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group flex-1"><label for="log-entrega-frete">Frete (R$)</label><input id="log-entrega-frete" type="number" min="0" step="0.01"></div>
+                <div class="form-group flex-1"><label for="log-entrega-previsao">Previsão de entrega</label><input id="log-entrega-previsao" type="date"></div>
+            </div>
+            <div class="form-group"><label for="log-entrega-rastreio">Código de rastreamento (opcional)</label><input id="log-entrega-rastreio" type="text"></div>
+            <div class="form-group"><label for="log-entrega-observacoes">Observações</label><textarea id="log-entrega-observacoes" rows="3"></textarea></div>
+            <div class="form-actions" style="margin-top:16px;">
+                <button class="btn btn-primary" type="button" onclick="salvarConfiguracaoEntrega()">Salvar dados da entrega</button>
+                <button class="btn btn-secondary" type="button" onclick="fecharModalLogistica()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Detalhes do Pedido -->
     <div id="modal-detalhes" class="modal" style="display: none;">
         <div class="modal-content">
