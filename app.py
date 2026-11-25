@@ -524,15 +524,18 @@ def criar_pedido():
 
     try:
         if transportadora_id:
-            subtotal_estimado = sum(
-                float((item.get('quantidade') or 0)) * float((item.get('preco_unitario') or 0))
-                for item in itens
-            )
-            if subtotal_estimado <= 0:
-                # O serviço de pedidos usa os preços atuais do cadastro; o subtotal é recalculado abaixo
-                subtotal_estimado = 0
-            # Cotação confiável é recalculada com o subtotal dos produtos no banco dentro do serviço de pedidos.
-            # Para esta demonstração, os preços enviados pelo navegador não são aceitos como fonte de verdade.
+            conn_cotacao = get_db_connection()
+            try:
+                subtotal_estimado = 0.0
+                with conn_cotacao.cursor() as cursor:
+                    for item in itens:
+                        cursor.execute("SELECT preco FROM produtos WHERE id = %s", (item.get('produto_id'),))
+                        produto_cotacao = cursor.fetchone()
+                        if not produto_cotacao:
+                            raise KeyError("Produto não encontrado para cálculo do frete.")
+                        subtotal_estimado += float(produto_cotacao['preco']) * int(item.get('quantidade') or 0)
+            finally:
+                conn_cotacao.close()
             cotacao = logistica_service.calcular_frete(transportadora_id, subtotal_estimado, peso_kg)
             frete = cotacao['frete']
             if not data_prevista_entrega:
