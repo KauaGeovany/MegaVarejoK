@@ -1610,7 +1610,6 @@ async function executarConfirmarPagamento(pedidoId) {
 }
 
 async function executarAvancoStatus(pedidoId, novoStatus) {
-    if (!confirm(`Deseja alterar o status do pedido para "${novoStatus}"?`)) return;
     try {
         const res = await fetch(`/api/pedidos/${pedidoId}/status`, {
             method: 'PATCH',
