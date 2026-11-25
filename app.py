@@ -886,8 +886,9 @@ def concluir_venda_pdv():
         pedido_service.confirmar_pagamento(
             pedido_id=pedido_id,
             responsavel=operador,
-            usuario_perfil='Financeiro',
-            valor=pedido['valor_total']
+            usuario_perfil=perfil,
+            valor=pedido['valor_total'],
+            via_pdv=True
         )
         pedido_service.atualizar_status(pedido_id, 'Em Separação', responsavel=operador, usuario_perfil=perfil)
         pedido_service.atualizar_status(pedido_id, 'Pronto para Envio', responsavel=operador, usuario_perfil=perfil)
