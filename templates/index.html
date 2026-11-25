@@ -1410,7 +1410,7 @@
                         <h3>Registrar recebimento</h3>
                         <p class="texto-secundario">Selecione a ordem, informe validade/lote quando aplicável e registre a quantidade efetivamente recebida. O estoque e o custo médio serão atualizados.</p>
                         <div class="form-row">
-                            <div class="form-group flex-2"><label>Ordem de compra</label><select id="recebimento-compra"><option value="">Selecione uma ordem</option></select></div>
+                            <div class="form-group flex-2"><label>Ordem de compra</label><select id="recebimento-compra" onchange="selecionarCompraRecebimento(this.value)"><option value="">Selecione uma ordem</option></select></div>
                             <div class="form-group flex-1"><label>Data de validade (opcional)</label><input type="date" id="recebimento-validade"></div>
                             <div class="form-group flex-1"><label>Identificação do lote</label><input id="recebimento-lote"></div>
                             <div class="form-group flex-1"><label>Vencimento financeiro</label><input type="date" id="recebimento-vencimento"></div>
