@@ -98,7 +98,7 @@ async function checarAutenticacao() {
 }
 
 function aplicarPermissoesMenu(permissoes) {
-    const modulos = ['dashboard', 'produtos', 'pedidos', 'clientes', 'usuarios', 'financeiro'];
+    const modulos = ['dashboard', 'produtos', 'pedidos', 'clientes', 'usuarios', 'financeiro', 'logistica'];
     modulos.forEach(mod => {
         const btn = document.getElementById(`nav-btn-${mod}`);
         if (btn) {
@@ -147,6 +147,7 @@ function navegarPara(moduloId) {
     if (containerId === 'dashboard') carregarDashboard();
     if (containerId === 'produtos') carregarModuloEstoque();
     if (containerId === 'pedidos') {
+        carregarTransportadorasPedido();
         carregarClientesParaPedido();
         carregarProdutosParaPedido();
         carregarIndicadoresPedidos();
@@ -160,6 +161,7 @@ function navegarPara(moduloId) {
     if (containerId === 'financeiro') {
         carregarModuloFinanceiro();
     }
+    if (containerId === 'logistica') carregarLogistica();
 }
 
 // ==========================================
@@ -1094,11 +1096,13 @@ function adicionarItemAoPedido() {
 
     quantidadeInput.value = 1;
     renderizarItensPedido();
+    if (document.getElementById('pedido-transportadora')?.value) calcularFretePedido();
 }
 
 function removerItemDoPedido(produtoId) {
     itensNovoPedido = itensNovoPedido.filter(i => i.produto_id !== produtoId);
     renderizarItensPedido();
+    if (document.getElementById('pedido-transportadora')?.value) calcularFretePedido();
 }
 
 function calcularTotaisPedido() {
@@ -1170,6 +1174,8 @@ async function finalizarPedido() {
         forma_pagamento: formaPagamento,
         desconto: desconto,
         frete: frete,
+        transportadora_id: document.getElementById('pedido-transportadora')?.value || null,
+        peso_kg: document.getElementById('pedido-peso')?.value || 0,
         data_prevista_entrega: dataPrevista,
         endereco_entrega: endereco,
         observacoes: observacoes,
@@ -1203,6 +1209,10 @@ async function finalizarPedido() {
         document.getElementById('pedido-data-prevista').value = '';
         document.getElementById('pedido-desconto').value = '0.00';
         document.getElementById('pedido-frete').value = '0.00';
+        if (document.getElementById('pedido-transportadora')) document.getElementById('pedido-transportadora').value = '';
+        if (document.getElementById('pedido-frete')) document.getElementById('pedido-frete').readOnly = false;
+        if (document.getElementById('pedido-peso')) document.getElementById('pedido-peso').value = '0';
+        if (document.getElementById('pedido-frete-ajuda')) document.getElementById('pedido-frete-ajuda').textContent = 'Selecione uma transportadora para calcular automaticamente.';
 
         // Atualizar listagem e indicadores
         carregarProdutosParaPedido();

@@ -25,6 +25,7 @@ from services.cliente_service import ClienteService
 from services.dashboard_service import DashboardService
 from services.usuario_service import UsuarioService
 from services.financeiro_service import FinanceiroService
+from services.logistica_service import LogisticaService
 
 # Importação de retrocompatibilidade do db.py
 from db import get_db_connection
@@ -48,13 +49,14 @@ cliente_service = ClienteService()
 dashboard_service = DashboardService()
 usuario_service = UsuarioService()
 financeiro_service = FinanceiroService()
+logistica_service = LogisticaService()
 
 # Dicionário de permissões mantido para compatibilidade com importações em testes
 ROLE_PERMISSIONS = {
-    'Administrador': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'usuarios', 'financeiro'},
-    'Estoque': {'dashboard', 'produtos', 'estoque'},
-    'Vendas': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes'},
-    'Gerência': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'financeiro'},
+    'Administrador': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'usuarios', 'financeiro', 'logistica'},
+    'Estoque': {'dashboard', 'produtos', 'estoque', 'logistica'},
+    'Vendas': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'logistica'},
+    'Gerência': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'financeiro', 'logistica'},
     'Financeiro': {'dashboard', 'pedidos', 'financeiro'}
 }
 
@@ -405,6 +407,102 @@ def obter_pedido(pedido_id):
     except Exception as e:
         return jsonify({'erro': str(e)}), 500
 
+
+# --- MÓDULO DE LOGÍSTICA ---
+def _logistica_permitida():
+    return session.get('usuario_perfil') in ('Administrador', 'Estoque', 'Vendas', 'Gerência')
+
+@app.route('/api/logistica/transportadoras', methods=['GET'])
+@login_required
+def listar_transportadoras():
+    if not _logistica_permitida(): return jsonify({'erro': 'Acesso não autorizado.'}), 403
+    try: return jsonify(logistica_service.listar_transportadoras(incluir_inativas=True))
+    except Exception:
+        logger.exception("Erro ao listar transportadoras")
+        return jsonify({'erro': 'Não foi possível carregar as transportadoras.'}), 500
+
+@app.route('/api/logistica/transportadoras', methods=['POST'])
+@login_required
+def salvar_transportadora():
+    if session.get('usuario_perfil') not in ('Administrador', 'Gerência'): return jsonify({'erro': 'Apenas Administração ou Gerência podem cadastrar transportadoras.'}), 403
+    try: return jsonify(logistica_service.salvar_transportadora(request.get_json() or {})), 201
+    except ValueError as e: return jsonify({'erro': str(e)}), 400
+    except Exception:
+        logger.exception("Erro ao salvar transportadora")
+        return jsonify({'erro': 'Não foi possível salvar a transportadora.'}), 500
+
+@app.route('/api/logistica/transportadoras/<int:transportadora_id>', methods=['PUT'])
+@login_required
+def editar_transportadora(transportadora_id):
+    if session.get('usuario_perfil') not in ('Administrador', 'Gerência'): return jsonify({'erro': 'Apenas Administração ou Gerência podem editar transportadoras.'}), 403
+    try: return jsonify(logistica_service.salvar_transportadora(request.get_json() or {}, transportadora_id))
+    except KeyError as e: return jsonify({'erro': str(e)}), 404
+    except ValueError as e: return jsonify({'erro': str(e)}), 400
+    except Exception:
+        logger.exception("Erro ao editar transportadora")
+        return jsonify({'erro': 'Não foi possível editar a transportadora.'}), 500
+
+@app.route('/api/logistica/transportadoras/<int:transportadora_id>/ativo', methods=['PATCH'])
+@login_required
+def alterar_transportadora_ativa(transportadora_id):
+    if session.get('usuario_perfil') not in ('Administrador', 'Gerência'): return jsonify({'erro': 'Acesso não autorizado.'}), 403
+    try: return jsonify(logistica_service.alterar_ativo_transportadora(transportadora_id, (request.get_json() or {}).get('ativo', False)))
+    except KeyError as e: return jsonify({'erro': str(e)}), 404
+    except Exception:
+        logger.exception("Erro ao alterar transportadora")
+        return jsonify({'erro': 'Não foi possível alterar a situação.'}), 500
+
+@app.route('/api/logistica/cotacao', methods=['POST'])
+@login_required
+def cotar_frete():
+    if not _logistica_permitida(): return jsonify({'erro': 'Acesso não autorizado.'}), 403
+    dados = request.get_json() or {}
+    try:
+        return jsonify(logistica_service.calcular_frete(dados.get('transportadora_id'), dados.get('subtotal', 0), dados.get('peso_kg', 0)))
+    except (ValueError, KeyError) as e: return jsonify({'erro': str(e)}), 400
+    except Exception:
+        logger.exception("Erro ao calcular frete")
+        return jsonify({'erro': 'Não foi possível calcular o frete.'}), 500
+
+@app.route('/api/logistica/entregas', methods=['GET'])
+@login_required
+def listar_entregas():
+    if not _logistica_permitida(): return jsonify({'erro': 'Acesso não autorizado.'}), 403
+    try: return jsonify(logistica_service.listar_entregas())
+    except Exception:
+        logger.exception("Erro ao listar entregas")
+        return jsonify({'erro': 'Não foi possível carregar as entregas.'}), 500
+
+@app.route('/api/logistica/entregas/<int:pedido_id>', methods=['PUT'])
+@login_required
+def salvar_dados_entrega(pedido_id):
+    if not _logistica_permitida(): return jsonify({'erro': 'Acesso não autorizado.'}), 403
+    try:
+        return jsonify(logistica_service.registrar_entrega(pedido_id, request.get_json() or {}, session.get('usuario_nome') or 'Operador'))
+    except KeyError as e: return jsonify({'erro': str(e)}), 404
+    except ValueError as e: return jsonify({'erro': str(e)}), 400
+    except Exception:
+        logger.exception("Erro ao salvar dados da entrega")
+        return jsonify({'erro': 'Não foi possível salvar os dados logísticos.'}), 500
+
+@app.route('/api/logistica/entregas/<int:pedido_id>/status', methods=['PATCH'])
+@login_required
+def atualizar_status_entrega(pedido_id):
+    if not _logistica_permitida(): return jsonify({'erro': 'Acesso não autorizado.'}), 403
+    dados = request.get_json() or {}
+    novo_status = str(dados.get('status') or '').strip()
+    if novo_status not in ('Enviado', 'Em Transporte', 'Entregue'):
+        return jsonify({'erro': 'Etapa logística inválida.'}), 400
+    try:
+        resultado = pedido_service.atualizar_status(pedido_id, novo_status, responsavel=session.get('usuario_nome') or 'Operador', usuario_perfil=session.get('usuario_perfil'), observacao=dados.get('observacoes'))
+        logistica_service.atualizar_evento_entrega(pedido_id, novo_status, session.get('usuario_nome') or 'Operador', dados.get('observacoes'))
+        return jsonify(resultado)
+    except KeyError as e: return jsonify({'erro': str(e)}), 404
+    except (ValueError, PermissionError) as e: return jsonify({'erro': str(e)}), 400
+    except Exception:
+        logger.exception("Erro ao atualizar etapa logística")
+        return jsonify({'erro': 'Não foi possível atualizar a etapa da entrega.'}), 500
+
 @app.route('/api/pedidos', methods=['POST'])
 @login_required
 @require_permission('pedidos')
@@ -415,6 +513,9 @@ def criar_pedido():
     cliente_id = dados.get('cliente_id')
     desconto = dados.get('desconto', 0.0)
     frete = dados.get('frete', 0.0)
+    transportadora_id = dados.get('transportadora_id')
+    peso_kg = dados.get('peso_kg', 0)
+    cotacao = None
     forma_pagamento = dados.get('forma_pagamento', 'PIX')
     endereco_entrega = dados.get('endereco_entrega')
     data_prevista_entrega = dados.get('data_prevista_entrega')
@@ -422,6 +523,24 @@ def criar_pedido():
     responsavel = session.get('usuario_nome') or 'Vendedor'
 
     try:
+        if transportadora_id:
+            conn_cotacao = get_db_connection()
+            try:
+                subtotal_estimado = 0.0
+                with conn_cotacao.cursor() as cursor:
+                    for item in itens:
+                        cursor.execute("SELECT preco FROM produtos WHERE id = %s", (item.get('produto_id'),))
+                        produto_cotacao = cursor.fetchone()
+                        if not produto_cotacao:
+                            raise KeyError("Produto não encontrado para cálculo do frete.")
+                        subtotal_estimado += float(produto_cotacao['preco']) * int(item.get('quantidade') or 0)
+            finally:
+                conn_cotacao.close()
+            cotacao = logistica_service.calcular_frete(transportadora_id, subtotal_estimado, peso_kg)
+            frete = cotacao['frete']
+            if not data_prevista_entrega:
+                data_prevista_entrega = cotacao['data_prevista']
+
         resultado = pedido_service.criar_pedido(
             itens=itens,
             cliente_id=cliente_id,
@@ -433,6 +552,17 @@ def criar_pedido():
             data_prevista_entrega=data_prevista_entrega,
             observacoes=observacoes
         )
+        if transportadora_id:
+            try:
+                logistica_service.registrar_entrega(resultado['pedido_id'], {
+                    'transportadora_id': transportadora_id,
+                    'peso_kg': peso_kg,
+                    'valor_frete': frete,
+                    'data_prevista': data_prevista_entrega
+                }, responsavel)
+            except Exception:
+                logger.exception("Pedido criado, mas houve falha ao registrar os dados logísticos.")
+                resultado['aviso_logistica'] = 'Pedido criado, mas os dados de transporte precisam ser configurados no módulo de Logística.'
         return jsonify(resultado), 201
     except KeyError as ke:
         return jsonify({"erro": str(ke).strip("'")}), 404

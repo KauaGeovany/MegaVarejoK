@@ -54,6 +54,9 @@
                 <button class="nav-item" id="nav-btn-pedidos" onclick="navegarPara('pedidos')" style="display: none;">
                     <svg class="nav-icon" aria-hidden="true"><use href="#icon-cart"></use></svg><span>Pedidos</span>
                 </button>
+                <button class="nav-item" id="nav-btn-logistica" onclick="navegarPara('logistica')" style="display: none;">
+                    <svg class="nav-icon" aria-hidden="true"><use href="#icon-truck"></use></svg><span>Logística</span>
+                </button>
                 <button class="nav-item" id="nav-btn-clientes" onclick="navegarPara('clientes')" style="display: none;">
                     <svg class="nav-icon" aria-hidden="true"><use href="#icon-users"></use></svg><span>Clientes</span>
                 </button>
@@ -781,8 +784,19 @@
                                     <input type="number" id="pedido-desconto" min="0" step="0.01" value="0.00" oninput="calcularTotaisPedido()">
                                 </div>
                                 <div class="form-group flex-1">
+                                    <label for="pedido-transportadora">Transportadora / Regra de frete</label>
+                                    <select id="pedido-transportadora" onchange="calcularFretePedido()">
+                                        <option value="">Frete manual</option>
+                                    </select>
+                                </div>
+                                <div class="form-group flex-1">
+                                    <label for="pedido-peso">Peso total (kg)</label>
+                                    <input type="number" id="pedido-peso" min="0" step="0.001" value="0" oninput="calcularFretePedido()">
+                                </div>
+                                <div class="form-group flex-1">
                                     <label for="pedido-frete">Frete (R$)</label>
                                     <input type="number" id="pedido-frete" min="0" step="0.01" value="0.00" oninput="calcularTotaisPedido()">
+                                    <small id="pedido-frete-ajuda" class="texto-secundario">Selecione uma transportadora para calcular automaticamente.</small>
                                 </div>
                                 <div class="form-group flex-2">
                                     <div class="pedido-valores-totais">
@@ -876,6 +890,84 @@
                             <tr><td colspan="8" style="text-align:center;">Carregando pedidos...</td></tr>
                         </tbody>
                     </table>
+                </div>
+            </section>
+
+            <!-- MÓDULO DE LOGÍSTICA -->
+            <section id="modulo-logistica" class="modulo">
+                <header class="section-header">
+                    <h1>Gestão de Logística</h1>
+                    <p>Organização de expedições, acompanhamento manual de entregas e cálculo de frete por transportadora.</p>
+                </header>
+
+                <div class="cards-grid logistica-kpis" style="margin-bottom: 24px;">
+                    <div class="card"><span class="card-title">Aguardando expedição</span><strong class="card-value" id="log-kpi-expedicao">0</strong></div>
+                    <div class="card"><span class="card-title">Em transporte</span><strong class="card-value" id="log-kpi-transporte">0</strong></div>
+                    <div class="card"><span class="card-title">Entregues</span><strong class="card-value" id="log-kpi-entregues">0</strong></div>
+                    <div class="card card-kpi-alerta"><span class="card-title">Entregas atrasadas</span><strong class="card-value" id="log-kpi-atrasadas">0</strong></div>
+                </div>
+
+                <div class="painel-form">
+                    <div class="tabela-header-actions">
+                        <div>
+                            <h3>Transportadoras e regras de frete</h3>
+                            <p class="texto-secundario">Cadastre regras demonstrativas para calcular automaticamente o frete dos pedidos.</p>
+                        </div>
+                        <button class="btn btn-primary" type="button" id="btn-cadastrar-transportadora" onclick="abrirFormularioTransportadora()">Cadastrar transportadora</button>
+                    </div>
+                    <div id="log-form-transportadora" class="log-form-transportadora" style="display:none;">
+                        <input type="hidden" id="log-transp-id">
+                        <div class="form-row">
+                            <div class="form-group flex-2"><label for="log-transp-nome">Nome *</label><input id="log-transp-nome" type="text" placeholder="Nome da transportadora"></div>
+                            <div class="form-group flex-1"><label for="log-transp-documento">CNPJ / Documento</label><input id="log-transp-documento" type="text" placeholder="Opcional"></div>
+                            <div class="form-group flex-1"><label for="log-transp-modelo">Modelo de cálculo</label>
+                                <select id="log-transp-modelo" onchange="alternarCamposFrete()">
+                                    <option value="PESO">Taxa fixa + peso</option>
+                                    <option value="PERCENTUAL">Taxa fixa + percentual do pedido</option>
+                                    <option value="FIXO">Valor fixo</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group flex-1"><label for="log-transp-taxa">Taxa fixa (R$)</label><input id="log-transp-taxa" type="number" min="0" step="0.01" value="0"></div>
+                            <div class="form-group flex-1" id="log-grupo-kg"><label for="log-transp-kg">Valor por kg (R$)</label><input id="log-transp-kg" type="number" min="0" step="0.01" value="0"></div>
+                            <div class="form-group flex-1" id="log-grupo-percentual"><label for="log-transp-percentual">Percentual (%)</label><input id="log-transp-percentual" type="number" min="0" max="100" step="0.001" value="0"></div>
+                            <div class="form-group flex-1"><label for="log-transp-minimo">Frete mínimo (R$)</label><input id="log-transp-minimo" type="number" min="0" step="0.01" value="0"></div>
+                            <div class="form-group flex-1"><label for="log-transp-prazo">Prazo estimado (dias)</label><input id="log-transp-prazo" type="number" min="1" step="1" value="5"></div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-primary" onclick="salvarTransportadora()">Salvar transportadora</button>
+                            <button type="button" class="btn btn-secondary" onclick="fecharFormularioTransportadora()">Cancelar</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="tabela">
+                            <thead><tr><th>Transportadora</th><th>Regra</th><th>Taxa fixa</th><th>Adicional</th><th>Prazo</th><th>Situação</th><th>Ações</th></tr></thead>
+                            <tbody id="log-tabela-transportadoras"><tr><td colspan="7">Carregando transportadoras...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tabela-container">
+                    <div class="tabela-header-actions">
+                        <div><h3>Fila de entregas</h3><p class="texto-secundario">Pedidos organizados por urgência e data prevista. Atualize manualmente cada etapa conforme a operação física.</p></div>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="carregarLogistica()">Atualizar</button>
+                    </div>
+                    <div class="form-row log-filtros">
+                        <div class="form-group flex-1"><label for="log-filtro-status">Etapa</label>
+                            <select id="log-filtro-status" onchange="renderizarEntregasLogistica()">
+                                <option value="">Todas</option><option value="Pronto para Envio">Aguardando expedição</option><option value="Enviado">Enviado</option><option value="Em Transporte">Em transporte</option><option value="Entregue">Entregue</option>
+                            </select>
+                        </div>
+                        <div class="form-group flex-2"><label for="log-filtro-busca">Pesquisar pedido ou cliente</label><input id="log-filtro-busca" type="search" oninput="renderizarEntregasLogistica()" placeholder="Número do pedido ou cliente"></div>
+                        <div class="form-group flex-auto"><label>&nbsp;</label><label class="log-check"><input id="log-filtro-atrasadas" type="checkbox" onchange="renderizarEntregasLogistica()"> Somente atrasadas</label></div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="tabela">
+                            <thead><tr><th>Pedido</th><th>Cliente</th><th>Transportadora</th><th>Frete</th><th>Previsão</th><th>Status</th><th>Prazo</th><th>Ações</th></tr></thead>
+                            <tbody id="log-tabela-entregas"><tr><td colspan="8">Carregando entregas...</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -1404,6 +1496,30 @@
         </div>
     </div>
 
+    <!-- Modal de configuração logística -->
+    <div id="modal-logistica" class="modal" style="display:none;">
+        <div class="modal-content modal-logistica-content">
+            <span class="modal-close" onclick="fecharModalLogistica()">&times;</span>
+            <h3>Configuração da entrega</h3>
+            <p id="log-entrega-pedido-label" class="texto-secundario"></p>
+            <input type="hidden" id="log-entrega-pedido-id">
+            <div class="form-row">
+                <div class="form-group flex-2"><label for="log-entrega-transportadora">Transportadora</label><select id="log-entrega-transportadora"></select></div>
+                <div class="form-group flex-1"><label for="log-entrega-peso">Peso (kg)</label><input id="log-entrega-peso" type="number" min="0" step="0.001"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group flex-1"><label for="log-entrega-frete">Frete (R$)</label><input id="log-entrega-frete" type="number" min="0" step="0.01"></div>
+                <div class="form-group flex-1"><label for="log-entrega-previsao">Previsão de entrega</label><input id="log-entrega-previsao" type="date"></div>
+            </div>
+            <div class="form-group"><label for="log-entrega-rastreio">Código de rastreamento (opcional)</label><input id="log-entrega-rastreio" type="text"></div>
+            <div class="form-group"><label for="log-entrega-observacoes">Observações</label><textarea id="log-entrega-observacoes" rows="3"></textarea></div>
+            <div class="form-actions" style="margin-top:16px;">
+                <button class="btn btn-primary" type="button" onclick="salvarConfiguracaoEntrega()">Salvar dados da entrega</button>
+                <button class="btn btn-secondary" type="button" onclick="fecharModalLogistica()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Detalhes do Pedido -->
     <div id="modal-detalhes" class="modal" style="display: none;">
         <div class="modal-content">
@@ -1423,5 +1539,6 @@
     </div>
 
     <script src="/static/js/app.js"></script>
+    <script src="/static/js/logistica.js"></script>
 </body>
 </html>
