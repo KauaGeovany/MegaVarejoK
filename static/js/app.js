@@ -546,13 +546,13 @@ function renderizarTimelineAtividades(atividades) {
         const item = document.createElement('div');
         item.className = 'timeline-item';
         item.innerHTML = `
-            <div class="timeline-icone">${a.icone || '📝'}</div>
+            <div class="timeline-icone"><svg class="metric-icon" aria-hidden="true"><use href="#icon-clock"></use></svg></div>
             <div class="timeline-corpo">
                 <div class="timeline-titulo">${a.titulo}</div>
                 <div class="timeline-desc">${a.descricao}</div>
                 <div class="timeline-meta">
-                    <span>🕒 ${a.data_formatada}</span>
-                    <span>👤 ${a.responsavel}</span>
+                    <span>${a.data_formatada}</span>
+                    <span>${a.responsavel}</span>
                 </div>
             </div>
         `;
@@ -2277,7 +2277,7 @@ async function carregarContasPagar() {
             else if (st === 'Parcialmente Pago') badgeClass = 'badge-separacao';
 
             const btnAcao = (st !== 'Pago' && st !== 'Cancelado')
-                ? `<button class="btn btn-primary btn-sm" onclick="abrirModalBaixaConta(${c.id}, '${c.descricao}', ${c.valor_restante})">💳 Pagar</button>`
+                ? `<button class="btn btn-primary btn-sm" onclick="abrirModalBaixaConta(${c.id}, '${c.descricao}', ${c.valor_restante})">Pagar</button>`
                 : `<span style="color: #94a3b8; font-size: 0.85rem;">Quitado</span>`;
 
             tr.innerHTML = `
@@ -2435,7 +2435,7 @@ async function carregarContasReceber() {
                 <td style="color: #ef4444; font-weight: 600;">${formatarMoeda(c.valor_restante)}</td>
                 <td><span class="badge ${badgeClass}">${c.status_calculado}</span></td>
                 <td>
-                    <button class="btn btn-primary btn-sm" onclick="abrirModalRecebimento(${c.pedido_id}, '${c.numero_pedido}', '${c.cliente_nome}', ${c.valor_restante})">📥 Receber</button>
+                    <button class="btn btn-primary btn-sm" onclick="abrirModalRecebimento(${c.pedido_id}, '${c.numero_pedido}', '${c.cliente_nome}', ${c.valor_restante})">Receber</button>
                 </td>
             `;
             tbody.appendChild(tr);
