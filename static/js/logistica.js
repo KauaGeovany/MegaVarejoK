@@ -182,7 +182,7 @@ function renderizarEntregasLogistica() {
             '<span class="status-badge badge-perfil">No prazo</span>';
         let acoes = '';
         if (e.status_pedido === 'Pronto para Envio') {
-            if (e.transportadora) acoes = '<button class="btn btn-primary btn-sm" onclick="registrarEtapaEntrega(' + e.pedido_id + ',\\'Enviado\\')">Marcar como enviado</button> <button class="btn btn-secondary btn-sm" onclick="abrirConfiguracaoEntrega(' + e.pedido_id + ')">Editar dados</button>';
+            if (e.transportadora) acoes = '<button class="btn btn-primary btn-sm" onclick="registrarEtapaEntrega(' + e.pedido_id + ',\'Enviado\')">Marcar como enviado</button> <button class="btn btn-secondary btn-sm" onclick="abrirConfiguracaoEntrega(' + e.pedido_id + ')">Editar dados</button>';
             else acoes = '<button class="btn btn-primary btn-sm" onclick="abrirConfiguracaoEntrega(' + e.pedido_id + ')">Configurar envio</button>';
         }
         else if (e.status_pedido === 'Enviado') acoes = '<button class="btn btn-secondary btn-sm" onclick="registrarEtapaEntrega(' + e.pedido_id + ',\'Em Transporte\')">Registrar transporte</button>';
