@@ -1369,7 +1369,7 @@
                     <p>Ordens de compra, recebimento de mercadorias e integração automática com estoque e financeiro.</p>
                 </header>
                 <div class="compras-layout">
-                    <div class="painel-form">
+                    <div class="painel-form" id="painel-fornecedor-compra">
                         <h3>Cadastro de fornecedor</h3>
                         <form id="form-fornecedor-compra" onsubmit="salvarFornecedorCompra(event)">
                             <div class="form-row">
@@ -1384,7 +1384,7 @@
                             <button class="btn btn-primary" type="submit">Cadastrar fornecedor</button>
                         </form>
                     </div>
-                    <div class="painel-form">
+                    <div class="painel-form" id="painel-criar-ordem-compra">
                         <h3>Nova ordem de compra</h3>
                         <div class="form-row">
                             <div class="form-group flex-2"><label>Fornecedor *</label><select id="compra-fornecedor"><option value="">Selecione</option></select></div>
@@ -1406,7 +1406,7 @@
                         <div class="tabela-header-actions"><h3>Ordens de compra</h3><button class="btn btn-secondary btn-sm" onclick="carregarCompras()">Atualizar</button></div>
                         <div class="table-responsive"><table class="tabela"><thead><tr><th>Ordem</th><th>Fornecedor</th><th>Data</th><th>Total</th><th>Recebido</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tabela-compras"><tr><td colspan="7">Carregando...</td></tr></tbody></table></div>
                     </div>
-                    <div class="painel-form">
+                    <div class="painel-form" id="painel-receber-compra">
                         <h3>Registrar recebimento</h3>
                         <p class="texto-secundario">Selecione a ordem, informe validade/lote quando aplicável e registre a quantidade efetivamente recebida. O estoque e o custo médio serão atualizados.</p>
                         <div class="form-row">
