@@ -181,6 +181,7 @@ def get_dashboard():
 def listar_produtos():
     busca = request.args.get('busca')
     try:
+        compras_service.garantir_estrutura()
         produtos = estoque_service.listar_produtos(busca=busca)
         return jsonify(produtos)
     except Exception as e:
