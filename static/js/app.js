@@ -546,13 +546,13 @@ function renderizarTimelineAtividades(atividades) {
         const item = document.createElement('div');
         item.className = 'timeline-item';
         item.innerHTML = `
-            <div class="timeline-icone">${a.icone || '📝'}</div>
+            <div class="timeline-icone"><svg class="metric-icon" aria-hidden="true"><use href="#icon-clock"></use></svg></div>
             <div class="timeline-corpo">
                 <div class="timeline-titulo">${a.titulo}</div>
                 <div class="timeline-desc">${a.descricao}</div>
                 <div class="timeline-meta">
-                    <span>🕒 ${a.data_formatada}</span>
-                    <span>👤 ${a.responsavel}</span>
+                    <span>${a.data_formatada}</span>
+                    <span>${a.responsavel}</span>
                 </div>
             </div>
         `;
@@ -1376,7 +1376,7 @@ async function carregarPedidos(filtros = {}) {
             const badgeStatusPag = obterClasseBadgeStatusPagamento(p.status_pagamento);
             const dataExibicao = formatarDataBR(p.data_formatada || p.data_pedido, true);
 
-            const avisoAtrasado = p.esta_atrasado ? '<span title="Pedido Atrasado" style="color: #dc2626; margin-left: 4px;">⏰</span>' : '';
+            const avisoAtrasado = p.esta_atrasado ? '<span title="Pedido Atrasado" style="color: #dc2626; margin-left: 4px;"></span>' : '';
 
             tr.innerHTML = `
                 <td><strong>${p.numero_pedido || '#' + p.id}</strong>${avisoAtrasado}</td>
@@ -1390,7 +1390,7 @@ async function carregarPedidos(filtros = {}) {
                 <td><span class="badge-status-pag ${badgeStatusPag}">${p.status_pagamento}</span></td>
                 <td><small>${p.responsavel || '-'}</small></td>
                 <td>
-                    <button class="btn btn-secondary btn-sm" onclick="verDetalhesPedido(${p.id})">🔍 Detalhes</button>
+                    <button class="btn btn-secondary btn-sm" onclick="verDetalhesPedido(${p.id})"> Detalhes</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -1511,7 +1511,7 @@ function renderizarAcoesModalPedido(pedido) {
     // 1. Confirmação de Pagamento (Financeiro, Gerência, Administrador)
     if (['Financeiro', 'Gerência', 'Administrador'].includes(perfil)) {
         if (pedido.status_pagamento === 'Pendente' && !['Cancelado', 'Devolvido', 'Recusado'].includes(pedido.status)) {
-            botoes += `<button type="button" class="btn btn-primary btn-sm" onclick="executarConfirmarPagamento(${pedido.id})">💰 Confirmar Pagamento</button>`;
+            botoes += `<button type="button" class="btn btn-primary btn-sm" onclick="executarConfirmarPagamento(${pedido.id})"> Confirmar Pagamento</button>`;
         }
     }
 
@@ -1519,23 +1519,23 @@ function renderizarAcoesModalPedido(pedido) {
     // Estoque: Em Separação, Pronto para Envio, Enviado
     if (['Estoque', 'Gerência', 'Administrador'].includes(perfil)) {
         if (['Confirmado', 'Aguardando Separação'].includes(pedido.status)) {
-            botoes += `<button type="button" class="btn btn-secondary btn-sm" onclick="executarAvancoStatus(${pedido.id}, 'Em Separação')">📦 Iniciar Separação</button>`;
+            botoes += `<button type="button" class="btn btn-secondary btn-sm" onclick="executarAvancoStatus(${pedido.id}, 'Em Separação')"> Iniciar Separação</button>`;
         }
         if (pedido.status === 'Em Separação') {
-            botoes += `<button type="button" class="btn btn-secondary btn-sm" onclick="executarAvancoStatus(${pedido.id}, 'Pronto para Envio')">🚚 Pronto para Envio</button>`;
+            botoes += `<button type="button" class="btn btn-secondary btn-sm" onclick="executarAvancoStatus(${pedido.id}, 'Pronto para Envio')"> Pronto para Envio</button>`;
         }
         if (pedido.status === 'Pronto para Envio') {
-            botoes += `<button type="button" class="btn btn-secondary btn-sm" onclick="executarAvancoStatus(${pedido.id}, 'Enviado')">✈️ Despachar / Enviado</button>`;
+            botoes += `<button type="button" class="btn btn-secondary btn-sm" onclick="executarAvancoStatus(${pedido.id}, 'Enviado')"> Despachar / Enviado</button>`;
         }
     }
 
     // Vendas/Gerência/Admin: Em Transporte -> Entregue
     if (['Vendas', 'Gerência', 'Administrador'].includes(perfil)) {
         if (pedido.status === 'Enviado') {
-            botoes += `<button type="button" class="btn btn-secondary btn-sm" onclick="executarAvancoStatus(${pedido.id}, 'Em Transporte')">🚛 Em Transporte</button>`;
+            botoes += `<button type="button" class="btn btn-secondary btn-sm" onclick="executarAvancoStatus(${pedido.id}, 'Em Transporte')"> Em Transporte</button>`;
         }
         if (['Enviado', 'Em Transporte'].includes(pedido.status)) {
-            botoes += `<button type="button" class="btn btn-primary btn-sm" onclick="executarAvancoStatus(${pedido.id}, 'Entregue')">✅ Confirmar Entrega</button>`;
+            botoes += `<button type="button" class="btn btn-primary btn-sm" onclick="executarAvancoStatus(${pedido.id}, 'Entregue')"> Confirmar Entrega</button>`;
         }
     }
 
@@ -1549,14 +1549,14 @@ function renderizarAcoesModalPedido(pedido) {
     // 4. Solicitação de Devolução (Vendas, Gerência, Admin - apenas se Enviado/Em Transporte/Entregue)
     if (['Vendas', 'Gerência', 'Administrador'].includes(perfil)) {
         if (['Enviado', 'Em Transporte', 'Entregue'].includes(pedido.status)) {
-            botoes += `<button type="button" class="btn btn-secondary btn-sm" onclick="abrirPromptDevolucaoPedido(${pedido.id})">↩️ Solicitar Devolução</button>`;
+            botoes += `<button type="button" class="btn btn-secondary btn-sm" onclick="abrirPromptDevolucaoPedido(${pedido.id})"> Solicitar Devolução</button>`;
         }
     }
 
     // 5. Conferência Física de Devolução (Estoque, Gerência, Admin)
     if (['Estoque', 'Gerência', 'Administrador'].includes(perfil)) {
         if (pedido.status === 'Devolução Solicitada') {
-            botoes += `<button type="button" class="btn btn-primary btn-sm" onclick="abrirPromptConferirDevolucao(${pedido.id})">🔍 Conferir e Retornar ao Estoque</button>`;
+            botoes += `<button type="button" class="btn btn-primary btn-sm" onclick="abrirPromptConferirDevolucao(${pedido.id})"> Conferir e Retornar ao Estoque</button>`;
         }
     }
 
@@ -1797,12 +1797,12 @@ async function carregarClientes(busca = '') {
             const podeEditar = usuarioAtual && usuarioAtual.perfil === 'Administrador';
             const podeExcluir = usuarioAtual && usuarioAtual.perfil === 'Administrador';
 
-            let acaoBotoes = `<button class="btn btn-secondary btn-sm" onclick="verDetalhesCliente(${cli.id})" title="Ver detalhes e pedidos">👁️ Ver</button>`;
+            let acaoBotoes = `<button class="btn btn-secondary btn-sm" onclick="verDetalhesCliente(${cli.id})" title="Ver detalhes e pedidos"> Ver</button>`;
             if (podeEditar) {
-                acaoBotoes += ` <button class="btn btn-primary btn-sm" onclick="iniciarEdicaoCliente(${cli.id})" title="Editar dados">✏️ Editar</button>`;
+                acaoBotoes += ` <button class="btn btn-primary btn-sm" onclick="iniciarEdicaoCliente(${cli.id})" title="Editar dados"> Editar</button>`;
             }
             if (podeExcluir) {
-                acaoBotoes += ` <button class="btn btn-danger btn-sm" onclick="excluirCliente(${cli.id}, '${cli.nome}', ${totalPed})" title="Excluir cliente">🗑️</button>`;
+                acaoBotoes += ` <button class="btn btn-danger btn-sm" onclick="excluirCliente(${cli.id}, '${cli.nome}', ${totalPed})" title="Excluir cliente"></button>`;
             }
 
             tr.innerHTML = `
@@ -2277,7 +2277,7 @@ async function carregarContasPagar() {
             else if (st === 'Parcialmente Pago') badgeClass = 'badge-separacao';
 
             const btnAcao = (st !== 'Pago' && st !== 'Cancelado')
-                ? `<button class="btn btn-primary btn-sm" onclick="abrirModalBaixaConta(${c.id}, '${c.descricao}', ${c.valor_restante})">💳 Pagar</button>`
+                ? `<button class="btn btn-primary btn-sm" onclick="abrirModalBaixaConta(${c.id}, '${c.descricao}', ${c.valor_restante})">Pagar</button>`
                 : `<span style="color: #94a3b8; font-size: 0.85rem;">Quitado</span>`;
 
             tr.innerHTML = `
@@ -2435,7 +2435,7 @@ async function carregarContasReceber() {
                 <td style="color: #ef4444; font-weight: 600;">${formatarMoeda(c.valor_restante)}</td>
                 <td><span class="badge ${badgeClass}">${c.status_calculado}</span></td>
                 <td>
-                    <button class="btn btn-primary btn-sm" onclick="abrirModalRecebimento(${c.pedido_id}, '${c.numero_pedido}', '${c.cliente_nome}', ${c.valor_restante})">📥 Receber</button>
+                    <button class="btn btn-primary btn-sm" onclick="abrirModalRecebimento(${c.pedido_id}, '${c.numero_pedido}', '${c.cliente_nome}', ${c.valor_restante})">Receber</button>
                 </td>
             `;
             tbody.appendChild(tr);
