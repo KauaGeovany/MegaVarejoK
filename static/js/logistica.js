@@ -241,14 +241,19 @@ async function salvarConfiguracaoEntrega() {
     } catch(e) { mostrarAlerta(e.message,'erro'); }
 }
 async function registrarEtapaEntrega(pedidoId, status) {
-    const obs = prompt('Observação para a etapa "' + status + '" (opcional):') || '';
     try {
         const res = await fetch('/api/logistica/entregas/' + pedidoId + '/status', {
-            method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status,observacoes:obs})
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({status, observacoes: ''})
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.erro || 'Falha ao atualizar etapa.');
-        mostrarAlerta(data.mensagem || 'Etapa registrada.'); await carregarLogistica();
+        mostrarAlerta(data.mensagem || 'Etapa registrada.');
+        await carregarLogistica();
         if (typeof carregarIndicadoresPedidos === 'function') carregarIndicadoresPedidos();
-    } catch(e) { mostrarAlerta(e.message,'erro'); }
+        if (typeof carregarPedidos === 'function') carregarPedidos();
+    } catch (e) {
+        mostrarAlerta(e.message, 'erro');
+    }
 }
