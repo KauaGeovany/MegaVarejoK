@@ -31,10 +31,12 @@ async function calcularFretePedido() {
     const frete = document.getElementById('pedido-frete');
     const ajuda = document.getElementById('pedido-frete-ajuda');
     if (!select || !select.value) {
+        if (frete) frete.readOnly = false;
         if (ajuda) ajuda.textContent = 'Selecione uma transportadora para calcular automaticamente.';
         calcularTotaisPedido();
         return;
     }
+    if (frete) frete.readOnly = true;
     const subtotal = itensNovoPedido.reduce((s, i) => s + Number(i.subtotal || 0), 0);
     try {
         const res = await fetch('/api/logistica/cotacao', {
