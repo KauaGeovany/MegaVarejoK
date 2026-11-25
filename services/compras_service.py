@@ -1,4 +1,6 @@
 from decimal import Decimal, InvalidOperation
+import uuid
+import datetime
 from database.connection import DatabaseConnection
 
 
@@ -158,8 +160,8 @@ class ComprasService:
                 cursor.execute("""
                     INSERT INTO compras (fornecedor_id, numero_compra, data_prevista, condicao_pagamento,
                         observacoes, valor_total, responsavel)
-                    VALUES (%s, 'PENDENTE', %s, %s, %s, %s, %s)
-                """, (fornecedor_id, dados.get("data_prevista") or None,
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (fornecedor_id, f"TMP-{uuid.uuid4().hex[:12]}", dados.get("data_prevista") or None,
                       dados.get("condicao_pagamento") or "A prazo",
                       dados.get("observacoes") or "", total, responsavel))
                 compra_id = cursor.lastrowid
@@ -231,7 +233,7 @@ class ComprasService:
                 cursor.execute("UPDATE compras SET status=%s, valor_recebido=valor_recebido+%s, data_recebimento=NOW() WHERE id=%s",
                                (status, valor_recebido, compra_id))
                 # Cada recebimento gera obrigação financeira pelo valor efetivamente recebido.
-                vencimento = dados.get("data_vencimento") or None
+                vencimento = dados.get("data_vencimento") or (datetime.date.today() + datetime.timedelta(days=30)).isoformat()
                 if vencimento:
                     cursor.execute("""
                         INSERT INTO contas_pagar (descricao,fornecedor_id,categoria,valor_original,valor_pago,data_vencimento,status,responsavel,observacoes)
@@ -276,5 +278,81 @@ class ComprasService:
                     ORDER BY l.data_validade ASC
                 """, (int(dias),))
                 return [dict(r) for r in cursor.fetchall()]
+        finally:
+            conn.close()
+
+
+    def obter_caixa_aberto(self, operador=None):
+        self.garantir_estrutura()
+        conn = DatabaseConnection.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM caixas WHERE status='Aberto' ORDER BY id DESC LIMIT 1")
+                row = cursor.fetchone()
+                return dict(row) if row else None
+        finally:
+            conn.close()
+
+    def abrir_caixa(self, operador, saldo_inicial):
+        self.garantir_estrutura()
+        saldo = Decimal(str(saldo_inicial or 0))
+        if saldo < 0:
+            raise ValueError("O saldo inicial não pode ser negativo.")
+        conn = DatabaseConnection.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT id FROM caixas WHERE status='Aberto' FOR UPDATE")
+                if cursor.fetchone():
+                    raise ValueError("Já existe um caixa aberto.")
+                cursor.execute("INSERT INTO caixas (usuario_abertura,saldo_inicial,status) VALUES (%s,%s,'Aberto')", (operador, saldo))
+                caixa_id = cursor.lastrowid
+            conn.commit()
+            return {"id": caixa_id, "mensagem": "Caixa aberto com sucesso."}
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def fechar_caixa(self, operador, saldo_informado):
+        self.garantir_estrutura()
+        saldo = Decimal(str(saldo_informado or 0))
+        if saldo < 0:
+            raise ValueError("O valor contado não pode ser negativo.")
+        conn = DatabaseConnection.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM caixas WHERE status='Aberto' ORDER BY id DESC LIMIT 1 FOR UPDATE")
+                caixa = cursor.fetchone()
+                if not caixa:
+                    raise ValueError("Não existe caixa aberto.")
+                cursor.execute("""
+                    SELECT COALESCE(SUM(CASE WHEN tipo='Entrada' THEN valor ELSE -valor END),0) movimento
+                    FROM transacoes_caixa
+                    WHERE data_transacao >= %s AND forma_pagamento='Dinheiro'
+                """, (caixa["aberto_em"],))
+                movimento = Decimal(str(cursor.fetchone()["movimento"] or 0))
+                saldo_sistema = Decimal(str(caixa["saldo_inicial"] or 0)) + movimento
+                diferenca = saldo - saldo_sistema
+                cursor.execute("UPDATE caixas SET fechado_em=NOW(),saldo_informado=%s,saldo_sistema=%s,diferenca=%s,status='Fechado' WHERE id=%s",
+                               (saldo, saldo_sistema, diferenca, caixa["id"]))
+            conn.commit()
+            return {"mensagem": "Caixa fechado e conferido.", "saldo_sistema": float(saldo_sistema), "diferenca": float(diferenca)}
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def vincular_venda_pdv(self, pedido_id, caixa_id, operador):
+        self.garantir_estrutura()
+        conn = DatabaseConnection.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("INSERT INTO vendas_pdv (pedido_id,caixa_id,operador) VALUES (%s,%s,%s)", (pedido_id, caixa_id, operador))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
         finally:
             conn.close()
