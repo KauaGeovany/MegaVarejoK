@@ -494,8 +494,8 @@ def atualizar_status_entrega(pedido_id):
     if novo_status not in ('Enviado', 'Em Transporte', 'Entregue'):
         return jsonify({'erro': 'Etapa logística inválida.'}), 400
     try:
-        logistica_service.atualizar_evento_entrega(pedido_id, novo_status, session.get('usuario_nome') or 'Operador', dados.get('observacoes'))
         resultado = pedido_service.atualizar_status(pedido_id, novo_status, responsavel=session.get('usuario_nome') or 'Operador', usuario_perfil=session.get('usuario_perfil'), observacao=dados.get('observacoes'))
+        logistica_service.atualizar_evento_entrega(pedido_id, novo_status, session.get('usuario_nome') or 'Operador', dados.get('observacoes'))
         return jsonify(resultado)
     except KeyError as e: return jsonify({'erro': str(e)}), 404
     except (ValueError, PermissionError) as e: return jsonify({'erro': str(e)}), 400
