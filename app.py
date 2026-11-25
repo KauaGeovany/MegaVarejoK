@@ -890,10 +890,9 @@ def concluir_venda_pdv():
             valor=pedido['valor_total'],
             via_pdv=True
         )
-        pedido_service.atualizar_status(pedido_id, 'Em Separação', responsavel=operador, usuario_perfil=perfil)
-        pedido_service.atualizar_status(pedido_id, 'Pronto para Envio', responsavel=operador, usuario_perfil=perfil)
-        pedido_service.atualizar_status(pedido_id, 'Enviado', responsavel=operador, usuario_perfil=perfil)
-        pedido_service.atualizar_status(pedido_id, 'Entregue', responsavel=operador, usuario_perfil=perfil)
+        # Venda presencial é concluída no balcão: não simula separação, transporte ou entrega.
+        pedido_service.atualizar_status(pedido_id, 'Entregue', responsavel=operador, usuario_perfil=perfil,
+                                        observacao='Venda presencial concluída no PDV.')
         compras_service.vincular_venda_pdv(pedido_id, caixa['id'], operador)
         return jsonify({"mensagem": "Venda concluída e registrada no caixa.", "pedido_id": pedido_id,
                         "numero_pedido": pedido['numero_pedido'], "valor_total": pedido['valor_total']}), 201
