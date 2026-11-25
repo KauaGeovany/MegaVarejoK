@@ -258,14 +258,14 @@ class PedidoService:
 
     def confirmar_pagamento(self, pedido_id: int, responsavel: str = "Financeiro", usuario_perfil: str = None,
                             novo_status_pagamento: str = "Confirmado", transacao_id: str = None,
-                            comprovante: str = None, valor: float = None) -> dict:
+                            comprovante: str = None, valor: float = None, via_pdv: bool = False) -> dict:
         """
         Confirmação de pagamento (Módulo Financeiro / Gerência / Admin).
         Após o pagamento confirmado, o pedido transita automaticamente para 'Confirmado' / 'Aguardando Separação'.
         Atualiza a conta a receber correspondente e gera entrada efetiva no Fluxo de Caixa.
         """
-        if usuario_perfil not in ['Financeiro', 'Gerência', 'Administrador', None]:
-            raise PermissionError("Apenas os perfis Financeiro, Gerência e Administrador podem confirmar pagamentos.")
+        if usuario_perfil not in ['Financeiro', 'Gerência', 'Administrador', None] and not (via_pdv and usuario_perfil == 'Vendas'):
+            raise PermissionError("Apenas Financeiro, Gerência, Administração ou uma venda autenticada no PDV podem confirmar pagamentos.")
 
         conn = DatabaseConnection.get_connection()
         try:

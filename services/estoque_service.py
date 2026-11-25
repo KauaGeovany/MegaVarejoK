@@ -15,6 +15,26 @@ class EstoqueService:
         self._produto_repo = produto_repo or ProdutoRepository()
         self._mov_repo = mov_repo or MovimentacaoRepository()
 
+    def _baixar_lotes_por_validade(self, produto_id: int, quantidade: int, conn):
+        """Consome primeiro os lotes com validade mais próxima (FEFO), quando houver rastreio."""
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT COUNT(*) total FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='lotes_estoque'")
+            if int(cursor.fetchone()["total"]) == 0:
+                return
+            cursor.execute("""
+                SELECT id, quantidade_atual FROM lotes_estoque
+                WHERE produto_id=%s AND quantidade_atual>0
+                ORDER BY COALESCE(data_validade, '9999-12-31') ASC, recebido_em ASC, id ASC
+                FOR UPDATE
+            """, (produto_id,))
+            restante = int(quantidade)
+            for lote in cursor.fetchall():
+                if restante <= 0:
+                    break
+                baixa = min(restante, int(lote["quantidade_atual"]))
+                cursor.execute("UPDATE lotes_estoque SET quantidade_atual=quantidade_atual-%s WHERE id=%s", (baixa, lote["id"]))
+                restante -= baixa
+
     # --- CONSULTA E CRUD DE PRODUTOS ---
 
     def listar_produtos(self, busca: str = None) -> list:
@@ -157,6 +177,8 @@ class EstoqueService:
 
             # Atualiza produto no banco
             self._produto_repo.atualizar_estoque_transacional(produto.id, novo_saldo, conn)
+            if tipo_normalizado == 'Saída':
+                self._baixar_lotes_por_validade(produto.id, qtd, conn)
 
             # Grava movimentação de auditoria
             mov = MovimentacaoEstoque(
@@ -213,6 +235,8 @@ class EstoqueService:
 
             # Atualiza no banco
             self._produto_repo.atualizar_estoque_transacional(produto.id, novo_saldo_int, conn)
+            if novo_saldo_int < saldo_anterior:
+                self._baixar_lotes_por_validade(produto.id, saldo_anterior - novo_saldo_int, conn)
 
             # Grava movimentação de auditoria tipo 'Ajuste'
             mov = MovimentacaoEstoque(

@@ -26,6 +26,7 @@ from services.dashboard_service import DashboardService
 from services.usuario_service import UsuarioService
 from services.financeiro_service import FinanceiroService
 from services.logistica_service import LogisticaService
+from services.compras_service import ComprasService
 
 # Importação de retrocompatibilidade do db.py
 from db import get_db_connection
@@ -50,14 +51,15 @@ dashboard_service = DashboardService()
 usuario_service = UsuarioService()
 financeiro_service = FinanceiroService()
 logistica_service = LogisticaService()
+compras_service = ComprasService()
 
 # Dicionário de permissões mantido para compatibilidade com importações em testes
 ROLE_PERMISSIONS = {
-    'Administrador': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'usuarios', 'financeiro', 'logistica'},
-    'Estoque': {'dashboard', 'produtos', 'estoque', 'logistica'},
-    'Vendas': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'logistica'},
-    'Gerência': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'financeiro', 'logistica'},
-    'Financeiro': {'dashboard', 'pedidos', 'financeiro'}
+    'Administrador': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'usuarios', 'financeiro', 'logistica', 'compras', 'pdv'},
+    'Estoque': {'dashboard', 'produtos', 'estoque', 'logistica', 'compras'},
+    'Vendas': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'logistica', 'pdv'},
+    'Gerência': {'dashboard', 'produtos', 'estoque', 'pedidos', 'clientes', 'financeiro', 'logistica', 'compras', 'pdv'},
+    'Financeiro': {'dashboard', 'pedidos', 'financeiro', 'compras'}
 }
 
 
@@ -179,6 +181,7 @@ def get_dashboard():
 def listar_produtos():
     busca = request.args.get('busca')
     try:
+        compras_service.garantir_estrutura()
         produtos = estoque_service.listar_produtos(busca=busca)
         return jsonify(produtos)
     except Exception as e:
@@ -717,6 +720,188 @@ def conferir_devolucao_pedido(pedido_id):
 
 
 # --- 4. MÓDULO CLIENTES ---
+
+
+# --- MÓDULO DE COMPRAS, FORNECEDORES E RECEBIMENTO ---
+@app.route('/api/compras/fornecedores', methods=['GET'])
+@login_required
+@require_permission('compras')
+def listar_fornecedores_compras():
+    try:
+        return jsonify(financeiro_service.listar_fornecedores(request.args.get('busca')))
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route('/api/compras/fornecedores', methods=['POST'])
+@login_required
+@require_permission('compras')
+def cadastrar_fornecedor_compras():
+    if session.get('usuario_perfil') not in ['Administrador', 'Gerência', 'Financeiro']:
+        return jsonify({"erro": "Somente Administração, Gerência ou Financeiro podem cadastrar fornecedores."}), 403
+    dados = request.get_json() or {}
+    try:
+        resultado = financeiro_service.cadastrar_fornecedor(
+            razao_social=dados.get('razao_social'),
+            cnpj_cpf=dados.get('cnpj_cpf', ''),
+            email=dados.get('email', ''),
+            telefone=dados.get('telefone', ''),
+            categoria=dados.get('categoria', 'Geral')
+        )
+        return jsonify(resultado), 201
+    except ValueError as e:
+        return jsonify({"erro": str(e)}), 400
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route('/api/compras', methods=['GET'])
+@login_required
+@require_permission('compras')
+def listar_compras():
+    try:
+        return jsonify(compras_service.listar_compras(request.args.get('status')))
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route('/api/compras/<int:compra_id>', methods=['GET'])
+@login_required
+@require_permission('compras')
+def obter_compra(compra_id):
+    try:
+        compra = compras_service.obter_compra(compra_id)
+        return (jsonify(compra), 200) if compra else (jsonify({"erro": "Ordem de compra não encontrada."}), 404)
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route('/api/compras', methods=['POST'])
+@login_required
+@require_permission('compras')
+def criar_compra():
+    if session.get('usuario_perfil') not in ['Administrador', 'Gerência', 'Compras']:
+        return jsonify({"erro": "Seu perfil não pode criar ordens de compra."}), 403
+    try:
+        resultado = compras_service.criar_compra(request.get_json() or {}, session.get('usuario_nome', 'Compras'))
+        return jsonify(resultado), 201
+    except KeyError as e:
+        return jsonify({"erro": str(e).strip("'")}), 404
+    except ValueError as e:
+        return jsonify({"erro": str(e)}), 400
+    except Exception as e:
+        logger.exception("Falha ao criar ordem de compra")
+        return jsonify({"erro": "Não foi possível criar a ordem de compra."}), 500
+
+@app.route('/api/compras/<int:compra_id>/recebimento', methods=['POST'])
+@login_required
+@require_permission('compras')
+def receber_compra(compra_id):
+    if session.get('usuario_perfil') not in ['Administrador', 'Gerência', 'Estoque', 'Compras']:
+        return jsonify({"erro": "Seu perfil não pode registrar recebimentos."}), 403
+    try:
+        resultado = compras_service.receber_compra(compra_id, request.get_json() or {}, session.get('usuario_nome', 'Estoque'))
+        return jsonify(resultado)
+    except KeyError as e:
+        return jsonify({"erro": str(e).strip("'")}), 404
+    except ValueError as e:
+        return jsonify({"erro": str(e)}), 400
+    except Exception:
+        logger.exception("Falha ao receber compra")
+        return jsonify({"erro": "Não foi possível registrar o recebimento."}), 500
+
+@app.route('/api/estoque/reposicao', methods=['GET'])
+@login_required
+@require_permission('produtos')
+def listar_sugestoes_reposicao():
+    try:
+        return jsonify(compras_service.obter_reposicao())
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route('/api/estoque/lotes', methods=['GET'])
+@login_required
+@require_permission('produtos')
+def listar_lotes_validade():
+    try:
+        return jsonify(compras_service.listar_lotes(request.args.get('dias', 30)))
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+# --- FRENTE DE CAIXA (PDV) ---
+@app.route('/api/pdv/caixa', methods=['GET'])
+@login_required
+@require_permission('pdv')
+def obter_caixa_pdv():
+    try:
+        return jsonify(compras_service.obter_caixa_aberto(session.get('usuario_nome')))
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route('/api/pdv/caixa/abrir', methods=['POST'])
+@login_required
+@require_permission('pdv')
+def abrir_caixa_pdv():
+    try:
+        dados = request.get_json() or {}
+        return jsonify(compras_service.abrir_caixa(session.get('usuario_nome', 'Operador'), dados.get('saldo_inicial', 0))), 201
+    except ValueError as e:
+        return jsonify({"erro": str(e)}), 400
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route('/api/pdv/caixa/fechar', methods=['POST'])
+@login_required
+@require_permission('pdv')
+def fechar_caixa_pdv():
+    try:
+        dados = request.get_json() or {}
+        return jsonify(compras_service.fechar_caixa(session.get('usuario_nome', 'Operador'), dados.get('saldo_informado', 0)))
+    except ValueError as e:
+        return jsonify({"erro": str(e)}), 400
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route('/api/pdv/vendas', methods=['POST'])
+@login_required
+@require_permission('pdv')
+def concluir_venda_pdv():
+    perfil = session.get('usuario_perfil')
+    if perfil not in ['Administrador', 'Gerência', 'Vendas']:
+        return jsonify({"erro": "Seu perfil não pode operar o caixa."}), 403
+    dados = request.get_json() or {}
+    operador = session.get('usuario_nome', 'Operador de Caixa')
+    try:
+        caixa = compras_service.obter_caixa_aberto(operador)
+        if not caixa:
+            raise ValueError("Abra o caixa antes de registrar uma venda.")
+        pedido = pedido_service.criar_pedido(
+            itens=dados.get('itens', []),
+            cliente_id=dados.get('cliente_id'),
+            desconto=dados.get('desconto', 0),
+            frete=0,
+            forma_pagamento=dados.get('forma_pagamento', 'Dinheiro'),
+            endereco_entrega='',
+            responsavel=operador,
+            observacoes='Venda realizada no PDV',
+            usuario_perfil=perfil
+        )
+        pedido_id = pedido['pedido_id']
+        pedido_service.confirmar_pagamento(
+            pedido_id=pedido_id,
+            responsavel=operador,
+            usuario_perfil=perfil,
+            valor=pedido['valor_total'],
+            via_pdv=True
+        )
+        pedido_service.atualizar_status(pedido_id, 'Em Separação', responsavel=operador, usuario_perfil=perfil)
+        pedido_service.atualizar_status(pedido_id, 'Pronto para Envio', responsavel=operador, usuario_perfil=perfil)
+        pedido_service.atualizar_status(pedido_id, 'Enviado', responsavel=operador, usuario_perfil=perfil)
+        pedido_service.atualizar_status(pedido_id, 'Entregue', responsavel=operador, usuario_perfil=perfil)
+        compras_service.vincular_venda_pdv(pedido_id, caixa['id'], operador)
+        return jsonify({"mensagem": "Venda concluída e registrada no caixa.", "pedido_id": pedido_id,
+                        "numero_pedido": pedido['numero_pedido'], "valor_total": pedido['valor_total']}), 201
+    except (KeyError, ValueError, PermissionError) as e:
+        return jsonify({"erro": str(e).strip("'")}), 400
+    except Exception:
+        logger.exception("Falha no checkout do PDV")
+        return jsonify({"erro": "Não foi possível concluir a venda. Verifique os pedidos antes de tentar novamente."}), 500
 
 @app.route('/api/clientes', methods=['GET'])
 @login_required

@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS produtos (
     preco DECIMAL(10, 2) NOT NULL,
     estoque INT NOT NULL DEFAULT 0,
     estoque_reservado INT NOT NULL DEFAULT 0,
-    estoque_minimo INT NOT NULL DEFAULT 5
+    estoque_minimo INT NOT NULL DEFAULT 5,
+    custo_medio DECIMAL(12,4) NOT NULL DEFAULT 0
 );
 
 -- Migrações idempotentes para tabela produtos
@@ -33,6 +34,11 @@ PREPARE alterCol FROM @preparedStatement; EXECUTE alterCol; DEALLOCATE PREPARE a
 -- coluna estoque_reservado
 SET @columnname = "estoque_reservado";
 SET @preparedStatement = (SELECT IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = @tablename AND COLUMN_NAME = @columnname) > 0, "SELECT 1", "ALTER TABLE produtos ADD COLUMN estoque_reservado INT NOT NULL DEFAULT 0 AFTER estoque;"));
+PREPARE alterCol FROM @preparedStatement; EXECUTE alterCol; DEALLOCATE PREPARE alterCol;
+
+-- coluna custo_medio
+SET @columnname = "custo_medio";
+SET @preparedStatement = (SELECT IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = @tablename AND COLUMN_NAME = @columnname) > 0, "SELECT 1", "ALTER TABLE produtos ADD COLUMN custo_medio DECIMAL(12,4) NOT NULL DEFAULT 0;"));
 PREPARE alterCol FROM @preparedStatement; EXECUTE alterCol; DEALLOCATE PREPARE alterCol;
 
 -- coluna estoque_minimo

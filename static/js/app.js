@@ -6,6 +6,9 @@ let itensNovoPedido = [];
 let perfisCache = [];
 let usuariosCache = [];
 let filtroAtivoIndicador = null;
+let itensNovaCompra = [];
+let itensVendaPDV = [];
+let compraSelecionadaRecebimento = null;
 
 // Formatar moeda brasileira (BRL)
 function formatarMoeda(valor) {
@@ -98,7 +101,7 @@ async function checarAutenticacao() {
 }
 
 function aplicarPermissoesMenu(permissoes) {
-    const modulos = ['dashboard', 'produtos', 'pedidos', 'clientes', 'usuarios', 'financeiro', 'logistica'];
+    const modulos = ['dashboard', 'produtos', 'pedidos', 'clientes', 'usuarios', 'financeiro', 'logistica', 'compras', 'pdv'];
     modulos.forEach(mod => {
         const btn = document.getElementById(`nav-btn-${mod}`);
         if (btn) {
@@ -162,6 +165,8 @@ function navegarPara(moduloId) {
         carregarModuloFinanceiro();
     }
     if (containerId === 'logistica') carregarLogistica();
+    if (containerId === 'compras') carregarModuloCompras();
+    if (containerId === 'pdv') carregarModuloPDV();
 }
 
 // ==========================================
@@ -584,8 +589,10 @@ function alternarAbaEstoque(subAbaId) {
 }
 
 async function carregarModuloEstoque() {
+    await fetch('/api/estoque/reposicao'); // Garante a estrutura de lotes e custo médio antes da consulta de produtos.
     await carregarResumoEstoque();
     await carregarProdutos();
+    carregarInteligenciaEstoque();
 
     // Regra de perfil: Se for Estoquista, oculta campos de preço
     if (usuarioAtual && usuarioAtual.perfil === 'Estoque') {
@@ -632,7 +639,7 @@ async function carregarProdutos() {
         tbody.innerHTML = '';
 
         if (produtos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Nenhum produto cadastrado ou encontrado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum produto cadastrado ou encontrado.</td></tr>';
             return;
         }
 
@@ -652,6 +659,7 @@ async function carregarProdutos() {
                 <td><strong>${prod.nome}</strong></td>
                 <td>${prod.categoria || 'Geral'}</td>
                 <td>${formatarMoeda(prod.preco)}</td>
+                <td>${formatarMoeda(prod.custo_medio || 0)}</td>
                 <td><span style="font-weight: 700;">${prod.estoque} un.</span></td>
                 <td>${prod.estoque_minimo || 5} un.</td>
                 <td><span class="status-badge ${badgeClass}">${prod.status_estoque}</span></td>
@@ -2632,3 +2640,221 @@ async function salvarFornecedor(event) {
 document.addEventListener('DOMContentLoaded', () => {
     checarAutenticacao();
 });
+
+
+// ==========================================
+// COMPRAS, FORNECEDORES E RECEBIMENTO
+// ==========================================
+async function carregarModuloCompras() {
+    const perfil = usuarioAtual?.perfil || '';
+    const podeCadastrarFornecedor = ['Administrador', 'Gerência', 'Financeiro'].includes(perfil);
+    const podeCriarCompra = ['Administrador', 'Gerência'].includes(perfil);
+    const podeReceberCompra = ['Administrador', 'Gerência', 'Estoque'].includes(perfil);
+    document.getElementById('painel-fornecedor-compra').style.display = podeCadastrarFornecedor ? 'block' : 'none';
+    document.getElementById('painel-criar-ordem-compra').style.display = podeCriarCompra ? 'block' : 'none';
+    document.getElementById('painel-receber-compra').style.display = podeReceberCompra ? 'block' : 'none';
+    await Promise.all([carregarFornecedoresCompra(), carregarCompras()]);
+    const res = await fetch('/api/produtos');
+    if (res.ok) {
+        produtosCache = await res.json();
+        const select = document.getElementById('compra-produto');
+        if (select) select.innerHTML = '<option value="">Selecione um produto</option>' + produtosCache.map(p => '<option value="' + p.id + '">' + p.codigo + ' - ' + p.nome + '</option>').join('');
+    }
+}
+async function carregarFornecedoresCompra() {
+    const res = await fetch('/api/compras/fornecedores');
+    if (!res.ok) return;
+    const fornecedores = await res.json();
+    const select = document.getElementById('compra-fornecedor');
+    if (select) select.innerHTML = '<option value="">Selecione um fornecedor</option>' + fornecedores.map(f => '<option value="' + f.id + '">' + f.razao_social + '</option>').join('');
+    const tbody = document.getElementById('tabela-fornecedores-compras');
+    if (tbody) tbody.innerHTML = fornecedores.length ? fornecedores.map(f => '<tr><td><strong>'+f.razao_social+'</strong></td><td>'+f.cnpj_cpf+'</td><td>'+f.email+'<br><small>'+f.telefone+'</small></td><td>'+f.categoria+'</td></tr>').join('') : '<tr><td colspan="4">Nenhum fornecedor cadastrado.</td></tr>';
+}
+async function salvarFornecedorCompra(event) {
+    event.preventDefault();
+    const payload = {
+        razao_social: document.getElementById('forn-razao').value.trim(),
+        cnpj_cpf: document.getElementById('forn-documento').value.trim(),
+        email: document.getElementById('forn-email').value.trim(),
+        telefone: document.getElementById('forn-telefone').value.trim(),
+        categoria: document.getElementById('forn-categoria').value.trim() || 'Geral'
+    };
+    const res = await fetch('/api/compras/fornecedores', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data = await res.json();
+    if (!res.ok) return mostrarAlerta(data.erro || 'Não foi possível cadastrar o fornecedor.','erro');
+    document.getElementById('form-fornecedor-compra').reset();
+    mostrarAlerta(data.mensagem || 'Fornecedor cadastrado.');
+    carregarFornecedoresCompra();
+}
+function adicionarItemCompra() {
+    const produtoId = Number(document.getElementById('compra-produto').value);
+    const quantidade = Number(document.getElementById('compra-quantidade').value);
+    const custo = Number(document.getElementById('compra-custo').value);
+    const produto = produtosCache.find(p => Number(p.id) === produtoId);
+    if (!produto || !Number.isInteger(quantidade) || quantidade <= 0 || !Number.isFinite(custo) || custo <= 0) return mostrarAlerta('Selecione o produto e informe quantidade e custo válidos.','erro');
+    const existente = itensNovaCompra.find(i => i.produto_id === produtoId);
+    if (existente) { existente.quantidade += quantidade; existente.custo_unitario = custo; }
+    else itensNovaCompra.push({produto_id:produtoId,nome:produto.nome,quantidade,custo_unitario:custo});
+    renderizarItensCompra();
+}
+function removerItemCompra(produtoId) {
+    itensNovaCompra = itensNovaCompra.filter(i => i.produto_id !== produtoId);
+    renderizarItensCompra();
+}
+function renderizarItensCompra() {
+    const tbody = document.getElementById('tabela-itens-compra');
+    if (!tbody) return;
+    if (!itensNovaCompra.length) tbody.innerHTML = '<tr><td colspan="5">Nenhum item adicionado.</td></tr>';
+    else tbody.innerHTML = itensNovaCompra.map(i => '<tr><td>'+i.nome+'</td><td>'+i.quantidade+'</td><td>'+formatarMoeda(i.custo_unitario)+'</td><td>'+formatarMoeda(i.quantidade*i.custo_unitario)+'</td><td><button class="btn btn-danger btn-sm" onclick="removerItemCompra('+i.produto_id+')">Remover</button></td></tr>').join('');
+    const total = itensNovaCompra.reduce((s,i)=>s+i.quantidade*i.custo_unitario,0);
+    document.getElementById('compra-total').textContent = formatarMoeda(total);
+}
+async function criarOrdemCompra() {
+    const fornecedorId = Number(document.getElementById('compra-fornecedor').value);
+    if (!fornecedorId || !itensNovaCompra.length) return mostrarAlerta('Selecione o fornecedor e adicione produtos à ordem.','erro');
+    const payload = {
+        fornecedor_id: fornecedorId,
+        data_prevista: document.getElementById('compra-previsao').value || null,
+        condicao_pagamento: document.getElementById('compra-condicao').value,
+        observacoes: document.getElementById('compra-observacoes').value,
+        itens: itensNovaCompra.map(i=>({produto_id:i.produto_id,quantidade:i.quantidade,custo_unitario:i.custo_unitario}))
+    };
+    const res = await fetch('/api/compras',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data = await res.json();
+    if (!res.ok) return mostrarAlerta(data.erro || 'Erro ao criar ordem.','erro');
+    itensNovaCompra = []; renderizarItensCompra();
+    document.getElementById('compra-observacoes').value = '';
+    mostrarAlerta(data.mensagem || 'Ordem criada.');
+    carregarCompras();
+}
+async function carregarCompras() {
+    const tbody = document.getElementById('tabela-compras');
+    if (!tbody) return;
+    const res = await fetch('/api/compras');
+    if (!res.ok) { tbody.innerHTML='<tr><td colspan="7">Não foi possível carregar as compras.</td></tr>'; return; }
+    const compras = await res.json();
+    tbody.innerHTML = compras.length ? compras.map(c => '<tr><td><strong>'+c.numero_compra+'</strong></td><td>'+c.fornecedor_nome+'</td><td>'+formatarDataBR(c.data_compra,false)+'</td><td>'+formatarMoeda(c.valor_total)+'</td><td>'+formatarMoeda(c.valor_recebido)+'</td><td><span class="status-badge">'+c.status+'</span></td><td>'+(c.status!=='Recebida' && c.status!=='Cancelada' ? '<button class="btn btn-primary btn-sm" onclick="selecionarCompraRecebimento('+c.id+')">Receber</button>' : '—')+'</td></tr>').join('') : '<tr><td colspan="7">Nenhuma ordem de compra cadastrada.</td></tr>';
+    const select = document.getElementById('recebimento-compra');
+    if (select) select.innerHTML = '<option value="">Selecione uma ordem</option>' + compras.filter(c=>c.status!=='Recebida' && c.status!=='Cancelada').map(c=>'<option value="'+c.id+'">'+c.numero_compra+' - '+c.fornecedor_nome+'</option>').join('');
+}
+async function selecionarCompraRecebimento(id) {
+    document.getElementById('recebimento-compra').value = id;
+    const res = await fetch('/api/compras/'+id);
+    const compra = await res.json();
+    if (!res.ok) return mostrarAlerta(compra.erro || 'Erro ao carregar ordem.','erro');
+    compraSelecionadaRecebimento = compra;
+    const pendentes = compra.itens.filter(i=>Number(i.quantidade)>Number(i.quantidade_recebida));
+    document.getElementById('recebimento-itens').innerHTML = pendentes.length ? pendentes.map(i => '<div class="recebimento-item"><label>'+i.produto_nome+' — pendente: '+(i.quantidade-i.quantidade_recebida)+' un.</label><input type="number" min="0" max="'+(i.quantidade-i.quantidade_recebida)+'" value="'+(i.quantidade-i.quantidade_recebida)+'" data-item-compra="'+i.id+'" aria-label="Quantidade recebida"><input type="text" data-lote-item="'+i.id+'" placeholder="Lote (opcional)" aria-label="Lote"><input type="date" data-validade-item="'+i.id+'" aria-label="Validade"></div>').join('') : '<span>Todos os itens já foram recebidos.</span>';
+}
+async function registrarRecebimentoCompra() {
+    const compraId = Number(document.getElementById('recebimento-compra').value);
+    if (!compraId) return mostrarAlerta('Selecione uma ordem de compra.','erro');
+    if (!compraSelecionadaRecebimento || Number(compraSelecionadaRecebimento.id)!==compraId) await selecionarCompraRecebimento(compraId);
+    const itens = Array.from(document.querySelectorAll('[data-item-compra]')).map(el=>({
+        item_id:Number(el.dataset.itemCompra),
+        quantidade_recebida:Number(el.value),
+        data_validade:document.querySelector('[data-validade-item="'+el.dataset.itemCompra+'"]')?.value || null,
+        lote:document.querySelector('[data-lote-item="'+el.dataset.itemCompra+'"]')?.value || null
+    })).filter(i=>i.quantidade_recebida>0);
+    if (!itens.length) return mostrarAlerta('Informe ao menos uma quantidade recebida.','erro');
+    const payload={itens,data_vencimento:document.getElementById('recebimento-vencimento').value || null};
+    const res=await fetch('/api/compras/'+compraId+'/recebimento',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await res.json();
+    if (!res.ok) return mostrarAlerta(data.erro || 'Erro ao registrar recebimento.','erro');
+    mostrarAlerta(data.mensagem || 'Recebimento registrado.');
+    compraSelecionadaRecebimento=null;
+    document.getElementById('recebimento-itens').innerHTML='<span class="texto-secundario">Selecione uma ordem para carregar os itens pendentes.</span>';
+    carregarCompras(); carregarModuloEstoque();
+}
+
+// ==========================================
+// INTELIGÊNCIA DE ESTOQUE: REPOSIÇÃO E VALIDADE
+// ==========================================
+async function carregarInteligenciaEstoque() {
+    const reposicaoBody=document.getElementById('tabela-reposicao');
+    const lotesBody=document.getElementById('tabela-lotes-validade');
+    if (!reposicaoBody || !lotesBody) return;
+    try {
+        const [rr,rl]=await Promise.all([fetch('/api/estoque/reposicao'),fetch('/api/estoque/lotes?dias=30')]);
+        const [reposicao,lotes]=await Promise.all([rr.json(),rl.json()]);
+        reposicaoBody.innerHTML=reposicao.length ? reposicao.map(p=>'<tr><td><strong>'+p.nome+'</strong></td><td>'+Math.max(0,p.estoque-p.estoque_reservado)+'</td><td>'+p.estoque_minimo+'</td><td><strong>'+p.quantidade_sugerida+' un.</strong></td></tr>').join('') : '<tr><td colspan="4">Nenhum produto precisa de reposição.</td></tr>';
+        lotesBody.innerHTML=lotes.length ? lotes.map(l=>'<tr><td>'+l.produto_nome+'</td><td>'+(l.lote||'—')+'</td><td>'+l.quantidade_atual+'</td><td>'+formatarDataBR(l.data_validade,false)+'</td><td><span class="status-badge '+(Number(l.dias_para_vencer)<0?'badge-estoque-zerado':'badge-estoque-baixo')+'">'+(Number(l.dias_para_vencer)<0?'Vencido':Number(l.dias_para_vencer)===0?'Vence hoje':'Em '+l.dias_para_vencer+' dias')+'</span></td></tr>').join('') : '<tr><td colspan="5">Nenhum lote próximo do vencimento.</td></tr>';
+    } catch(e) { reposicaoBody.innerHTML='<tr><td colspan="4">Erro ao carregar sugestões.</td></tr>'; }
+}
+
+// ==========================================
+// FRENTE DE CAIXA / PDV
+// ==========================================
+async function carregarModuloPDV() {
+    const [rp,rc,rl]=await Promise.all([fetch('/api/produtos'),fetch('/api/clientes'),fetch('/api/pdv/caixa')]);
+    if (rp.ok) {
+        produtosCache=await rp.json();
+        const select=document.getElementById('pdv-produto');
+        select.innerHTML='<option value="">Selecione um produto</option>'+produtosCache.filter(p=>(p.estoque_disponivel ?? p.estoque)>0).map(p=>'<option value="'+p.id+'">'+p.nome+' — '+formatarMoeda(p.preco)+' (disp. '+(p.estoque_disponivel ?? p.estoque)+')</option>').join('');
+    }
+    if (rc.ok) {
+        clientesCache=await rc.json();
+        document.getElementById('pdv-cliente').innerHTML='<option value="">Consumidor final</option>'+clientesCache.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('');
+    }
+    if (rl.ok) atualizarEstadoCaixaPDV(await rl.json());
+    renderizarItensPDV();
+}
+function atualizarEstadoCaixaPDV(caixa) {
+    const aberto=!!caixa;
+    document.getElementById('pdv-status-caixa').textContent=aberto?'Aberto':'Fechado';
+    document.getElementById('pdv-status-caixa').className=aberto?'pdv-status-aberto':'pdv-status-fechado';
+    document.getElementById('pdv-operador-caixa').textContent=aberto?'Abertura: '+formatarDataBR(caixa.aberto_em,true):'Abra o caixa para iniciar as vendas.';
+    document.getElementById('pdv-btn-abrir').style.display=aberto?'none':'inline-flex';
+    document.getElementById('pdv-btn-fechar').style.display=aberto?'inline-flex':'none';
+    document.getElementById('pdv-saldo-caixa').parentElement.querySelector('label').textContent=aberto?'Valor contado no fechamento (R$)':'Saldo inicial do caixa (R$)';
+}
+async function abrirCaixaPDV() {
+    const saldo=Number(document.getElementById('pdv-saldo-caixa').value||0);
+    const res=await fetch('/api/pdv/caixa/abrir',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({saldo_inicial:saldo})});
+    const data=await res.json();
+    if (!res.ok) return mostrarAlerta(data.erro||'Não foi possível abrir o caixa.','erro');
+    mostrarAlerta(data.mensagem); carregarModuloPDV();
+}
+async function fecharCaixaPDV() {
+    const saldo=Number(document.getElementById('pdv-saldo-caixa').value||0);
+    const res=await fetch('/api/pdv/caixa/fechar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({saldo_informado:saldo})});
+    const data=await res.json();
+    if (!res.ok) return mostrarAlerta(data.erro||'Não foi possível fechar o caixa.','erro');
+    mostrarAlerta(data.mensagem+' Saldo esperado: '+formatarMoeda(data.saldo_sistema)+'. Diferença: '+formatarMoeda(data.diferenca)+'.');
+    document.getElementById('pdv-saldo-caixa').value='0'; carregarModuloPDV();
+}
+function adicionarItemPDV() {
+    const id=Number(document.getElementById('pdv-produto').value);
+    const qtd=Number(document.getElementById('pdv-quantidade').value);
+    const p=produtosCache.find(x=>Number(x.id)===id);
+    if (!p || !Number.isInteger(qtd) || qtd<=0) return mostrarAlerta('Selecione um produto e informe uma quantidade válida.','erro');
+    const livre=Number(p.estoque_disponivel ?? p.estoque);
+    const atual=itensVendaPDV.find(i=>i.produto_id===id);
+    if ((atual?atual.quantidade:0)+qtd>livre) return mostrarAlerta('Estoque disponível insuficiente.','erro');
+    if (atual) atual.quantidade+=qtd; else itensVendaPDV.push({produto_id:id,nome:p.nome,preco_unitario:Number(p.preco),quantidade:qtd});
+    renderizarItensPDV();
+}
+function removerItemPDV(id) { itensVendaPDV=itensVendaPDV.filter(i=>i.produto_id!==id); renderizarItensPDV(); }
+function renderizarItensPDV() {
+    const tbody=document.getElementById('pdv-itens'); if(!tbody)return;
+    tbody.innerHTML=itensVendaPDV.length?itensVendaPDV.map(i=>'<tr><td>'+i.nome+'</td><td>'+i.quantidade+'</td><td>'+formatarMoeda(i.preco_unitario)+'</td><td>'+formatarMoeda(i.quantidade*i.preco_unitario)+'</td><td><button class="btn btn-danger btn-sm" onclick="removerItemPDV('+i.produto_id+')">Remover</button></td></tr>').join(''):'<tr><td colspan="5">Nenhum produto adicionado.</td></tr>';
+    const subtotal=itensVendaPDV.reduce((s,i)=>s+i.quantidade*i.preco_unitario,0);
+    const desconto=Math.max(0,Number(document.getElementById('pdv-desconto')?.value||0));
+    document.getElementById('pdv-total').textContent=formatarMoeda(Math.max(0,subtotal-desconto));
+}
+async function concluirVendaPDV() {
+    if(!itensVendaPDV.length)return mostrarAlerta('Adicione produtos à venda.','erro');
+    const desconto=Math.max(0,Number(document.getElementById('pdv-desconto').value||0));
+    const subtotal=itensVendaPDV.reduce((s,i)=>s+i.quantidade*i.preco_unitario,0);
+    if(desconto>subtotal)return mostrarAlerta('O desconto não pode superar o subtotal.','erro');
+    const payload={cliente_id:document.getElementById('pdv-cliente').value||null,forma_pagamento:document.getElementById('pdv-forma-pagamento').value,desconto,itens:itensVendaPDV.map(i=>({produto_id:i.produto_id,quantidade:i.quantidade}))};
+    const btn=document.querySelector('#modulo-pdv .pdv-resumo .btn-primary'); btn.disabled=true; btn.textContent='Processando...';
+    try {
+        const res=await fetch('/api/pdv/vendas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const data=await res.json();
+        if(!res.ok)return mostrarAlerta(data.erro||'Falha ao concluir venda.','erro');
+        mostrarAlerta('Venda '+data.numero_pedido+' concluída. Total: '+formatarMoeda(data.valor_total)+'.');
+        itensVendaPDV=[]; document.getElementById('pdv-desconto').value='0'; renderizarItensPDV(); carregarModuloPDV(); carregarModuloEstoque();
+    } catch(e) { mostrarAlerta('Erro de conexão ao finalizar venda.','erro'); }
+    finally { btn.disabled=false; btn.textContent='Finalizar venda'; }
+}
