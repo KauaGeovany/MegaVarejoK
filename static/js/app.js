@@ -2646,6 +2646,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // COMPRAS, FORNECEDORES E RECEBIMENTO
 // ==========================================
 async function carregarModuloCompras() {
+    const perfil = usuarioAtual?.perfil || '';
+    const podeCadastrarFornecedor = ['Administrador', 'Gerência', 'Financeiro'].includes(perfil);
+    const podeCriarCompra = ['Administrador', 'Gerência'].includes(perfil);
+    const podeReceberCompra = ['Administrador', 'Gerência', 'Estoque'].includes(perfil);
+    document.getElementById('painel-fornecedor-compra').style.display = podeCadastrarFornecedor ? 'block' : 'none';
+    document.getElementById('painel-criar-ordem-compra').style.display = podeCriarCompra ? 'block' : 'none';
+    document.getElementById('painel-receber-compra').style.display = podeReceberCompra ? 'block' : 'none';
     await Promise.all([carregarFornecedoresCompra(), carregarCompras()]);
     const res = await fetch('/api/produtos');
     if (res.ok) {
