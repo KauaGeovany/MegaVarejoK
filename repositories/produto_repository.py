@@ -23,7 +23,8 @@ class ProdutoRepository(BaseRepository):
             preco=l['preco'],
             estoque=l['estoque'],
             estoque_reservado=int(l.get('estoque_reservado') or 0),
-            estoque_minimo=l.get('estoque_minimo') if l.get('estoque_minimo') is not None else 5
+            estoque_minimo=l.get('estoque_minimo') if l.get('estoque_minimo') is not None else 5,
+            custo_medio=l.get('custo_medio', 0)
         )
 
     def listar_todos(self, busca: str = None) -> list:
@@ -41,7 +42,8 @@ class ProdutoRepository(BaseRepository):
                                CAST(preco AS FLOAT) AS preco, 
                                estoque,
                                COALESCE(estoque_reservado, 0) as estoque_reservado,
-                               COALESCE(estoque_minimo, 5) as estoque_minimo
+                               COALESCE(estoque_minimo, 5) as estoque_minimo,
+                               COALESCE(custo_medio, 0) as custo_medio
                         FROM produtos 
                         WHERE nome LIKE %s OR codigo LIKE %s OR categoria LIKE %s
                         ORDER BY id DESC;
