@@ -46,6 +46,8 @@ async function calcularFretePedido() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.erro || 'Não foi possível calcular o frete.');
         frete.value = Number(data.frete).toFixed(2);
+        const campoPrevisao = document.getElementById('pedido-data-prevista');
+        if (campoPrevisao && !campoPrevisao.value) campoPrevisao.value = data.data_prevista;
         if (ajuda) ajuda.textContent = 'Calculado automaticamente. Prazo estimado: ' + data.prazo_dias + ' dia(s). Previsão sugerida: ' + formatarDataBR(data.data_prevista, false) + '.';
         calcularTotaisPedido();
     } catch (e) {
