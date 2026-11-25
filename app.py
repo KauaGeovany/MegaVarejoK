@@ -553,12 +553,16 @@ def criar_pedido():
             observacoes=observacoes
         )
         if transportadora_id:
-            logistica_service.registrar_entrega(resultado['pedido_id'], {
-                'transportadora_id': transportadora_id,
-                'peso_kg': peso_kg,
-                'valor_frete': frete,
-                'data_prevista': data_prevista_entrega
-            }, responsavel)
+            try:
+                logistica_service.registrar_entrega(resultado['pedido_id'], {
+                    'transportadora_id': transportadora_id,
+                    'peso_kg': peso_kg,
+                    'valor_frete': frete,
+                    'data_prevista': data_prevista_entrega
+                }, responsavel)
+            except Exception:
+                logger.exception("Pedido criado, mas houve falha ao registrar os dados logísticos.")
+                resultado['aviso_logistica'] = 'Pedido criado, mas os dados de transporte precisam ser configurados no módulo de Logística.'
         return jsonify(resultado), 201
     except KeyError as ke:
         return jsonify({"erro": str(ke).strip("'")}), 404
